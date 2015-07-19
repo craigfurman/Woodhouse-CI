@@ -31,7 +31,7 @@ var _ = Describe("Creating a job", func() {
 			Eventually(page.Find("form input#name")).Should(BeFound())
 			Expect(page.Find("form input#name").Fill("Bob")).To(Succeed())
 			Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
-			Eventually(page.Find("h1#jobTitle")).Should(HaveText("Bob"))
+			Eventually(page.Find("#jobTitle")).Should(HaveText("Bob"))
 		})
 
 		By("streaming the output from the job", func() {

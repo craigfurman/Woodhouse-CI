@@ -5,25 +5,32 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
-var (
-	cachedTemplates = make(map[string]*template.Template)
-)
+type Handler struct {
+	*mux.Router
 
-func New(templateDir string) *mux.Router {
+	templates map[string]*template.Template
+}
+
+func New(templateDir string) *Handler {
+	templates := parseTemplates(templateDir)
 	router := mux.NewRouter()
 
+	handler := &Handler{
+		Router:    router,
+		templates: templates,
+	}
+
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		t := getTemplate("list_jobs", templateDir)
-		must(t.Execute(w, nil))
+		handler.renderTemplate("list_jobs", w)
 	}).Methods("GET")
 
 	router.HandleFunc("/jobs/new", func(w http.ResponseWriter, r *http.Request) {
-		t := getTemplate("create_job", templateDir)
-		must(t.Execute(w, nil))
+		handler.renderTemplate("create_job", w)
 	}).Methods("GET")
 
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
@@ -31,19 +38,29 @@ func New(templateDir string) *mux.Router {
 	}).Methods("POST")
 
 	router.HandleFunc("/jobs/{id}/output", func(w http.ResponseWriter, r *http.Request) {
-		t := getTemplate("job_output", templateDir)
-		must(t.Execute(w, nil))
+		handler.renderTemplate("job_output", w)
 	}).Methods("GET")
 
-	return router
+	return handler
 }
 
-func getTemplate(name, templateDir string) *template.Template {
-	templatePath := filepath.Join(templateDir, fmt.Sprintf("%s.html", name))
-	if _, ok := cachedTemplates[templatePath]; !ok {
-		cachedTemplates[templatePath] = template.Must(template.ParseFiles(templatePath))
+func (h Handler) renderTemplate(name string, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/html")
+	must(h.templates[name].Execute(w, nil))
+}
+
+func parseTemplates(templateDir string) map[string]*template.Template {
+	templates := make(map[string]*template.Template)
+
+	layout := filepath.Join(templateDir, "layouts", "layout.html")
+	views, err := filepath.Glob(fmt.Sprintf("%s/views/*.html", templateDir))
+	must(err)
+
+	for _, view := range views {
+		viewName := strings.Split(filepath.Base(view), ".")[0]
+		templates[viewName] = template.Must(template.ParseFiles(layout, view))
 	}
-	return cachedTemplates[templatePath]
+	return templates
 }
 
 func must(err error) {
