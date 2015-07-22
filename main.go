@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/codegangsta/negroni"
-	"github.com/craigfurman/penthouse/web"
+	"github.com/craigfurman/woodhouse-ci/web"
 )
 
 func main() {

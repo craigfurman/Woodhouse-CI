@@ -27,7 +27,7 @@ var (
 
 var _ = BeforeSuite(func() {
 	var err error
-	executablePath, err = gexec.Build("github.com/craigfurman/penthouse")
+	executablePath, err = gexec.Build("github.com/craigfurman/woodhouse-ci")
 	Expect(err).NotTo(HaveOccurred())
 
 	if os.Getenv("HEADLESS") == "true" {
