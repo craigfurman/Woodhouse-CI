@@ -64,6 +64,7 @@ func New(jobService JobService, templateDir string) *Handler {
 	}).Methods("GET")
 
 	router.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
 		handler.renderTemplate("error", nil, w)
 	}).Methods("GET")
 
