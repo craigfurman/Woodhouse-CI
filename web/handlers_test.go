@@ -80,18 +80,22 @@ var _ = Describe("Handlers", func() {
 	})
 
 	Describe("job output", func() {
-		It("retrieves the job by ID", func() {
-			jobService.FindByIdReturns(jobs.Job{Name: "Woodhouse"}, nil)
+		It("runs the job syncronously", func() {
+			jobService.RunJobReturns(jobs.RunningJob{
+				Job:    jobs.Job{Name: "Woodhouse"},
+				Output: "boom!",
+			}, nil)
 			Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/output", server.URL))).To(Succeed())
 			Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
+			Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
 
-			Expect(jobService.FindByIdCallCount()).To(Equal(1))
-			Expect(jobService.FindByIdArgsForCall(0)).To(Equal("woodhouse-id"))
+			Expect(jobService.RunJobCallCount()).To(Equal(1))
+			Expect(jobService.RunJobArgsForCall(0)).To(Equal("woodhouse-id"))
 		})
 
 		Context("when retrieving the job fails", func() {
 			BeforeEach(func() {
-				jobService.FindByIdReturns(jobs.Job{}, errors.New("oops!"))
+				jobService.RunJobReturns(jobs.RunningJob{}, errors.New("oops!"))
 			})
 
 			It("shows the error page", func() {

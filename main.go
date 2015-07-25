@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/craigfurman/woodhouse-ci/db"
+	"github.com/craigfurman/woodhouse-ci/jobs"
+	"github.com/craigfurman/woodhouse-ci/runner"
 	"github.com/craigfurman/woodhouse-ci/web"
 
 	"github.com/codegangsta/negroni"
@@ -29,7 +31,10 @@ func main() {
 	jobRepo, err := db.NewJobRepository(filepath.Join(dbDir, "store.db"))
 	must(err)
 
-	handler := web.New(jobRepo, *templateDir)
+	handler := web.New(&jobs.Service{
+		Repository: jobRepo,
+		Runner:     runner.DockerRunner{},
+	}, *templateDir)
 
 	server := negroni.Classic()
 	server.UseHandler(handler)

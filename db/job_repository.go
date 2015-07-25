@@ -32,11 +32,11 @@ func (repo *JobRepository) Save(job *jobs.Job) error {
 }
 
 func (repo *JobRepository) FindById(id string) (jobs.Job, error) {
-	var name string
-	if err := repo.db.QueryRow("SELECT name FROM jobs WHERE id=?", id).Scan(&name); err != nil {
+	job := jobs.Job{ID: id}
+	if err := repo.db.QueryRow("SELECT name FROM jobs WHERE id=?", id).Scan(&job.Name); err != nil {
 		return jobs.Job{}, fmt.Errorf("no job found with ID: %s. Cause: %v", id, err)
 	}
-	return jobs.Job{ID: id, Name: name}, nil
+	return job, nil
 }
 
 func (repo *JobRepository) Close() error {

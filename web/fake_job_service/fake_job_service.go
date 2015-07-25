@@ -9,13 +9,13 @@ import (
 )
 
 type FakeJobService struct {
-	FindByIdStub        func(id string) (jobs.Job, error)
-	findByIdMutex       sync.RWMutex
-	findByIdArgsForCall []struct {
+	RunJobStub        func(id string) (jobs.RunningJob, error)
+	runJobMutex       sync.RWMutex
+	runJobArgsForCall []struct {
 		id string
 	}
-	findByIdReturns struct {
-		result1 jobs.Job
+	runJobReturns struct {
+		result1 jobs.RunningJob
 		result2 error
 	}
 	SaveStub        func(job *jobs.Job) error
@@ -28,35 +28,35 @@ type FakeJobService struct {
 	}
 }
 
-func (fake *FakeJobService) FindById(id string) (jobs.Job, error) {
-	fake.findByIdMutex.Lock()
-	fake.findByIdArgsForCall = append(fake.findByIdArgsForCall, struct {
+func (fake *FakeJobService) RunJob(id string) (jobs.RunningJob, error) {
+	fake.runJobMutex.Lock()
+	fake.runJobArgsForCall = append(fake.runJobArgsForCall, struct {
 		id string
 	}{id})
-	fake.findByIdMutex.Unlock()
-	if fake.FindByIdStub != nil {
-		return fake.FindByIdStub(id)
+	fake.runJobMutex.Unlock()
+	if fake.RunJobStub != nil {
+		return fake.RunJobStub(id)
 	} else {
-		return fake.findByIdReturns.result1, fake.findByIdReturns.result2
+		return fake.runJobReturns.result1, fake.runJobReturns.result2
 	}
 }
 
-func (fake *FakeJobService) FindByIdCallCount() int {
-	fake.findByIdMutex.RLock()
-	defer fake.findByIdMutex.RUnlock()
-	return len(fake.findByIdArgsForCall)
+func (fake *FakeJobService) RunJobCallCount() int {
+	fake.runJobMutex.RLock()
+	defer fake.runJobMutex.RUnlock()
+	return len(fake.runJobArgsForCall)
 }
 
-func (fake *FakeJobService) FindByIdArgsForCall(i int) string {
-	fake.findByIdMutex.RLock()
-	defer fake.findByIdMutex.RUnlock()
-	return fake.findByIdArgsForCall[i].id
+func (fake *FakeJobService) RunJobArgsForCall(i int) string {
+	fake.runJobMutex.RLock()
+	defer fake.runJobMutex.RUnlock()
+	return fake.runJobArgsForCall[i].id
 }
 
-func (fake *FakeJobService) FindByIdReturns(result1 jobs.Job, result2 error) {
-	fake.FindByIdStub = nil
-	fake.findByIdReturns = struct {
-		result1 jobs.Job
+func (fake *FakeJobService) RunJobReturns(result1 jobs.RunningJob, result2 error) {
+	fake.RunJobStub = nil
+	fake.runJobReturns = struct {
+		result1 jobs.RunningJob
 		result2 error
 	}{result1, result2}
 }

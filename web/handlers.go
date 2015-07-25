@@ -15,7 +15,7 @@ import (
 
 //go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
 type JobService interface {
-	FindById(id string) (jobs.Job, error)
+	RunJob(id string) (jobs.RunningJob, error)
 	Save(job *jobs.Job) error
 }
 
@@ -53,8 +53,8 @@ func New(jobService JobService, templateDir string) *Handler {
 
 	router.HandleFunc("/jobs/{id}/output", func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		if job, err := jobService.FindById(id); err == nil {
-			handler.renderTemplate("job_output", job, w)
+		if completedJob, err := jobService.RunJob(id); err == nil {
+			handler.renderTemplate("job_output", completedJob, w)
 		} else {
 			errPage("retrieving job", err, w, r)
 		}
