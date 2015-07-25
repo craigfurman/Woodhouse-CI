@@ -15,8 +15,8 @@ var _ = Describe("DockerRunner", func() {
 		r = &runner.DockerRunner{}
 	})
 
-	It("runs an arbitrary, fixed command", func() {
-		job := jobs.Job{ID: "some-id", Name: "gob"}
+	It("runs the specified command in docker", func() {
+		job := jobs.Job{ID: "some-id", Name: "gob", Command: "echo Hello world!"}
 		rj, err := r.Run(job)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rj).To(Equal(jobs.RunningJob{

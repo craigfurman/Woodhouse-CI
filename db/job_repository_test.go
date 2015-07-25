@@ -42,7 +42,7 @@ var _ = Describe("JobRepository", func() {
 		)
 
 		BeforeEach(func() {
-			savedJob = &jobs.Job{Name: "myFancyJob"}
+			savedJob = &jobs.Job{Name: "myFancyJob", Command: "my CI script"}
 			saveJobErr = repo.Save(savedJob)
 		})
 
@@ -58,7 +58,7 @@ var _ = Describe("JobRepository", func() {
 			It("retrieves the job", func() {
 				job, err := repo.FindById(savedJob.ID)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(job).To(Equal(jobs.Job{ID: savedJob.ID, Name: "myFancyJob"}))
+				Expect(job).To(Equal(jobs.Job{ID: savedJob.ID, Name: "myFancyJob", Command: "my CI script"}))
 			})
 
 			Context("when no job with that ID exists", func() {

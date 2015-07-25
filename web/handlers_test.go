@@ -47,6 +47,7 @@ var _ = Describe("Handlers", func() {
 			By("saving the job using the service", func() {
 				jobService.SaveStub = func(job *jobs.Job) error {
 					Expect(job.Name).To(Equal("Alice"))
+					Expect(job.Command).To(Equal("bork bork"))
 					job.ID = "some-id"
 					return nil
 				}
@@ -54,6 +55,7 @@ var _ = Describe("Handlers", func() {
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
 				Eventually(page.Find("form input#name")).Should(BeFound())
 				Expect(page.Find("form input#name").Fill("Alice")).To(Succeed())
+				Expect(page.Find("form input#command").Fill("bork bork")).To(Succeed())
 				Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
 
 				Expect(jobService.SaveCallCount()).To(Equal(1))

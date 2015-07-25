@@ -3,8 +3,9 @@ package jobs
 import "fmt"
 
 type Job struct {
-	ID   string
-	Name string
+	ID      string
+	Name    string
+	Command string
 }
 
 type RunningJob struct {

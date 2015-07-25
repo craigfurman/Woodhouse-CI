@@ -43,7 +43,10 @@ func New(jobService JobService, templateDir string) *Handler {
 	}).Methods("GET")
 
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		job := jobs.Job{Name: r.FormValue("name")}
+		job := jobs.Job{
+			Name:    r.FormValue("name"),
+			Command: r.FormValue("command"),
+		}
 		if err := jobService.Save(&job); err == nil {
 			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/output", job.ID), 302)
 		} else {

@@ -2,7 +2,8 @@
 -- +goose Up
 CREATE TABLE jobs(
 	id TEXT PRIMARY KEY,
-	name TEXT
+	name TEXT NOT NULL,
+	command TEXT NOT NULL
 );
 
 

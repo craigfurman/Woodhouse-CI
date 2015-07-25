@@ -29,9 +29,10 @@ var _ = Describe("Service", func() {
 
 	Describe("saving a job", func() {
 		It("saves the job using the repository", func() {
-			Expect(service.Save(&jobs.Job{Name: "freddo"})).To(Succeed())
+			Expect(service.Save(&jobs.Job{Name: "freddo", Command: "whoami"})).To(Succeed())
 			Expect(repo.SaveCallCount()).To(Equal(1))
 			Expect(repo.SaveArgsForCall(0).Name).To(Equal("freddo"))
+			Expect(repo.SaveArgsForCall(0).Command).To(Equal("whoami"))
 		})
 
 		Context("when saving fails", func() {
@@ -47,7 +48,7 @@ var _ = Describe("Service", func() {
 
 	Describe("running a job", func() {
 		BeforeEach(func() {
-			job := jobs.Job{ID: "some-id", Name: "jerb"}
+			job := jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"}
 			repo.FindByIdReturns(job, nil)
 			runner.RunReturns(jobs.RunningJob{Job: job, Output: "some output"}, nil)
 		})
@@ -56,7 +57,7 @@ var _ = Describe("Service", func() {
 			runningJob, err := service.RunJob("some-id")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(runningJob).To(Equal(jobs.RunningJob{
-				Job:    jobs.Job{ID: "some-id", Name: "jerb"},
+				Job:    jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"},
 				Output: "some output",
 			}))
 
