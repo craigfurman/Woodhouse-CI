@@ -3,12 +3,21 @@ package web
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
 
+	"github.com/craigfurman/woodhouse-ci/jobs"
+
 	"github.com/gorilla/mux"
 )
+
+//go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
+type JobService interface {
+	FindById(id string) (jobs.Job, error)
+	Save(job *jobs.Job) error
+}
 
 type Handler struct {
 	*mux.Router
@@ -16,7 +25,7 @@ type Handler struct {
 	templates map[string]*template.Template
 }
 
-func New(templateDir string) *Handler {
+func New(jobService JobService, templateDir string) *Handler {
 	templates := parseTemplates(templateDir)
 	router := mux.NewRouter()
 
@@ -26,27 +35,46 @@ func New(templateDir string) *Handler {
 	}
 
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		handler.renderTemplate("list_jobs", w)
+		handler.renderTemplate("list_jobs", nil, w)
 	}).Methods("GET")
 
 	router.HandleFunc("/jobs/new", func(w http.ResponseWriter, r *http.Request) {
-		handler.renderTemplate("create_job", w)
+		handler.renderTemplate("create_job", nil, w)
 	}).Methods("GET")
 
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/jobs/42/output", 302)
+		job := jobs.Job{Name: r.FormValue("name")}
+		if err := jobService.Save(&job); err == nil {
+			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/output", job.ID), 302)
+		} else {
+			errPage("saving job", err, w, r)
+		}
 	}).Methods("POST")
 
 	router.HandleFunc("/jobs/{id}/output", func(w http.ResponseWriter, r *http.Request) {
-		handler.renderTemplate("job_output", w)
+		id := mux.Vars(r)["id"]
+		if job, err := jobService.FindById(id); err == nil {
+			handler.renderTemplate("job_output", job, w)
+		} else {
+			errPage("retrieving job", err, w, r)
+		}
+	}).Methods("GET")
+
+	router.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
+		handler.renderTemplate("error", nil, w)
 	}).Methods("GET")
 
 	return handler
 }
 
-func (h Handler) renderTemplate(name string, w http.ResponseWriter) {
+func errPage(message string, err error, w http.ResponseWriter, r *http.Request) {
+	log.Printf("Error: %s: %v", message, err)
+	http.Redirect(w, r, "/error", 302)
+}
+
+func (h Handler) renderTemplate(name string, pageObject interface{}, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html")
-	must(h.templates[name].Execute(w, nil))
+	must(h.templates[name].Execute(w, pageObject))
 }
 
 func parseTemplates(templateDir string) map[string]*template.Template {

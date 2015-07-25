@@ -45,8 +45,15 @@ var _ = AfterSuite(func() {
 var _ = BeforeEach(func() {
 	cwd, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
-	templateDir := filepath.Join(cwd, "..", "web", "templates")
-	runningExecutable, err = gexec.Start(exec.Command(executablePath, "-port=3000", "-templateDir", templateDir), GinkgoWriter, GinkgoWriter)
+
+	storeDir := filepath.Join(cwd, "..", "db")
+	os.Remove(filepath.Join(storeDir, "sqlite", "store.db"))
+
+	runningExecutable, err = gexec.Start(exec.Command(
+		executablePath, "-port=3000",
+		"-templateDir", filepath.Join(cwd, "..", "web", "templates"),
+		"-storeDir", storeDir,
+	), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 })
 
