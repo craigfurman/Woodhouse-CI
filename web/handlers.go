@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
+	"github.com/craigfurman/woodhouse-ci/web/helpers"
 
 	"github.com/gorilla/mux"
 )
@@ -57,7 +58,7 @@ func New(jobService JobService, templateDir string) *Handler {
 	router.HandleFunc("/jobs/{id}/output", func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		if completedJob, err := jobService.RunJob(id); err == nil {
-			handler.renderTemplate("job_output", completedJob, w)
+			handler.renderTemplate("job_output", helpers.PresentableJob(completedJob), w)
 		} else {
 			errPage("retrieving job", err, w, r)
 		}

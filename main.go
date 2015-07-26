@@ -33,7 +33,10 @@ func main() {
 
 	handler := web.New(&jobs.Service{
 		Repository: jobRepo,
-		Runner:     runner.DockerRunner{},
+		Runner: &runner.DockerRunner{
+			CommandRunner: runner.UnixCommandRunner{},
+			ArgChunker:    runner.Chunk,
+		},
 	}, *templateDir)
 
 	server := negroni.Classic()

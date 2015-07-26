@@ -50,15 +50,16 @@ var _ = Describe("Service", func() {
 		BeforeEach(func() {
 			job := jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"}
 			repo.FindByIdReturns(job, nil)
-			runner.RunReturns(jobs.RunningJob{Job: job, Output: "some output"}, nil)
+			runner.RunReturns(jobs.RunningJob{Job: job, Output: "some output", ExitStatus: 10}, nil)
 		})
 
 		It("runs the job and returns the result", func() {
 			runningJob, err := service.RunJob("some-id")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(runningJob).To(Equal(jobs.RunningJob{
-				Job:    jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"},
-				Output: "some output",
+				Job:        jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"},
+				Output:     "some output",
+				ExitStatus: 10,
 			}))
 
 			Expect(runner.RunCallCount()).To(Equal(1))
@@ -72,6 +73,17 @@ var _ = Describe("Service", func() {
 			It("returns error", func() {
 				_, err := service.RunJob("bad-id")
 				Expect(err).To(MatchError(ContainSubstring("running job with ID: bad-id")))
+			})
+		})
+
+		Context("when running the cannot be started", func() {
+			BeforeEach(func() {
+				runner.RunReturns(jobs.RunningJob{}, errors.New("couldn't start job!"))
+			})
+
+			It("returns error", func() {
+				_, err := service.RunJob("some-id")
+				Expect(err).To(MatchError(ContainSubstring("starting job with ID: some-id")))
 			})
 		})
 	})

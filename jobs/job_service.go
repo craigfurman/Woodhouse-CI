@@ -10,7 +10,8 @@ type Job struct {
 
 type RunningJob struct {
 	Job
-	Output string
+	Output     string
+	ExitStatus uint32
 }
 
 //go:generate counterfeiter -o fake_job_repository/fake_job_repository.go . Repository
@@ -38,5 +39,11 @@ func (s *Service) RunJob(id string) (RunningJob, error) {
 	if err != nil {
 		return RunningJob{}, fmt.Errorf("running job with ID: %s. Cause: %v", id, err)
 	}
-	return s.Runner.Run(job)
+
+	rj, err := s.Runner.Run(job)
+	if err != nil {
+		return RunningJob{}, fmt.Errorf("starting job with ID: %s. Cause: %v", id, err)
+	}
+
+	return rj, nil
 }

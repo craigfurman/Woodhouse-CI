@@ -90,6 +90,7 @@ var _ = Describe("Handlers", func() {
 			Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/output", server.URL))).To(Succeed())
 			Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
 			Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
+			Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
 
 			Expect(jobService.RunJobCallCount()).To(Equal(1))
 			Expect(jobService.RunJobArgsForCall(0)).To(Equal("woodhouse-id"))

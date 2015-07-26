@@ -1,21 +1,36 @@
 package runner
 
 import (
+	"fmt"
 	"os/exec"
-	"strings"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
-type DockerRunner struct{}
+type ArgChunker func(string) []string
 
-func (DockerRunner) Run(job jobs.Job) (jobs.RunningJob, error) {
+//go:generate counterfeiter -o fake_command_runner/fake_command_runner.go . CommandRunner
+type CommandRunner interface {
+	CombinedOutput(cmd *exec.Cmd) ([]byte, uint32, error)
+}
+
+type DockerRunner struct {
+	ArgChunker    ArgChunker
+	CommandRunner CommandRunner
+}
+
+func (r *DockerRunner) Run(job jobs.Job) (jobs.RunningJob, error) {
 	args := []string{"run", "--rm", "busybox"}
-	args = append(args, strings.Split(job.Command, " ")...)
+	args = append(args, r.ArgChunker(job.Command)...)
 	containerCmd := exec.Command("docker", args...)
-	output, _ := containerCmd.CombinedOutput()
+	output, exitStatus, err := r.CommandRunner.CombinedOutput(containerCmd)
+	if err != nil {
+		return jobs.RunningJob{}, fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
+	}
+
 	return jobs.RunningJob{
-		Job:    job,
-		Output: string(output),
+		Job:        job,
+		Output:     string(output),
+		ExitStatus: exitStatus,
 	}, nil
 }
