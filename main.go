@@ -16,17 +16,22 @@ import (
 )
 
 func main() {
-	port := flag.Uint("port", 0, "port to listen on")
-	templateDir := flag.String("templateDir", "", "path to html templates")
-	storeDir := flag.String("storeDir", "", "directory for saving persistent data")
-	flag.Parse()
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	must(err)
+	distBase := filepath.Join(dir, "..")
 
-	migrateCmd := exec.Command("goose", "up")
-	migrateCmd.Dir = filepath.Join(*storeDir, "..")
-	must(migrateCmd.Run())
+	port := flag.Uint("port", 8080, "port to listen on")
+	templateDir := flag.String("templateDir", filepath.Join(distBase, "web", "templates"), "path to html templates")
+	storeDir := flag.String("storeDir", filepath.Join(distBase, "db"), "directory for saving persistent data")
+	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
+	flag.Parse()
 
 	dbDir := filepath.Join(*storeDir, "sqlite")
 	must(os.MkdirAll(dbDir, 0755))
+
+	migrateCmd := exec.Command(*gooseCmd, "up")
+	migrateCmd.Dir = filepath.Join(*storeDir, "..")
+	must(migrateCmd.Run())
 
 	jobRepo, err := db.NewJobRepository(filepath.Join(dbDir, "store.db"))
 	must(err)

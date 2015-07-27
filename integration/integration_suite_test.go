@@ -54,6 +54,7 @@ var _ = BeforeEach(func() {
 		executablePath, "-port=3000",
 		"-templateDir", filepath.Join(cwd, "..", "web", "templates"),
 		"-storeDir", storeDir,
+		"-gooseCmd=goose",
 	), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 })
