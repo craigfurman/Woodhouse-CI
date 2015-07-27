@@ -40,6 +40,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	Expect(agoutiDriver.Stop()).To(Succeed())
+	gexec.CleanupBuildArtifacts()
 })
 
 var _ = BeforeEach(func() {
