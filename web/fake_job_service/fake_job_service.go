@@ -9,13 +9,13 @@ import (
 )
 
 type FakeJobService struct {
-	RunJobStub        func(id string) (jobs.RunningJob, error)
+	RunJobStub        func(id string) (jobs.Build, error)
 	runJobMutex       sync.RWMutex
 	runJobArgsForCall []struct {
 		id string
 	}
 	runJobReturns struct {
-		result1 jobs.RunningJob
+		result1 jobs.Build
 		result2 error
 	}
 	SaveStub        func(job *jobs.Job) error
@@ -28,7 +28,7 @@ type FakeJobService struct {
 	}
 }
 
-func (fake *FakeJobService) RunJob(id string) (jobs.RunningJob, error) {
+func (fake *FakeJobService) RunJob(id string) (jobs.Build, error) {
 	fake.runJobMutex.Lock()
 	fake.runJobArgsForCall = append(fake.runJobArgsForCall, struct {
 		id string
@@ -53,10 +53,10 @@ func (fake *FakeJobService) RunJobArgsForCall(i int) string {
 	return fake.runJobArgsForCall[i].id
 }
 
-func (fake *FakeJobService) RunJobReturns(result1 jobs.RunningJob, result2 error) {
+func (fake *FakeJobService) RunJobReturns(result1 jobs.Build, result2 error) {
 	fake.RunJobStub = nil
 	fake.runJobReturns = struct {
-		result1 jobs.RunningJob
+		result1 jobs.Build
 		result2 error
 	}{result1, result2}
 }

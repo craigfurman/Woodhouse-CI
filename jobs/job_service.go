@@ -8,7 +8,7 @@ type Job struct {
 	Command string
 }
 
-type RunningJob struct {
+type Build struct {
 	Job
 	Output     string
 	ExitStatus uint32
@@ -22,7 +22,7 @@ type Repository interface {
 
 //go:generate counterfeiter -o fake_job_runner/fake_job_runner.go . Runner
 type Runner interface {
-	Run(job Job) (RunningJob, error)
+	Run(job Job) (Build, error)
 }
 
 type Service struct {
@@ -34,15 +34,15 @@ func (s *Service) Save(job *Job) error {
 	return s.Repository.Save(job)
 }
 
-func (s *Service) RunJob(id string) (RunningJob, error) {
+func (s *Service) RunJob(id string) (Build, error) {
 	job, err := s.Repository.FindById(id)
 	if err != nil {
-		return RunningJob{}, fmt.Errorf("running job with ID: %s. Cause: %v", id, err)
+		return Build{}, fmt.Errorf("running job with ID: %s. Cause: %v", id, err)
 	}
 
 	rj, err := s.Runner.Run(job)
 	if err != nil {
-		return RunningJob{}, fmt.Errorf("starting job with ID: %s. Cause: %v", id, err)
+		return Build{}, fmt.Errorf("starting job with ID: %s. Cause: %v", id, err)
 	}
 
 	return rj, nil

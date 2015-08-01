@@ -6,14 +6,14 @@ import (
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
-type RunningJob struct {
+type Build struct {
 	Name        string
 	Output      string
 	ExitMessage string
 }
 
-func PresentableJob(rj jobs.RunningJob) RunningJob {
-	return RunningJob{
+func PresentableJob(rj jobs.Build) Build {
+	return Build{
 		Name:        rj.Name,
 		Output:      rj.Output,
 		ExitMessage: message(rj.ExitStatus),

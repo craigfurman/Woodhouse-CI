@@ -23,7 +23,7 @@ var _ = Describe("DockerRunner", func() {
 		output     = "some output"
 		exitStatus uint32
 
-		rj     jobs.RunningJob
+		rj     jobs.Build
 		runErr error
 	)
 
@@ -65,7 +65,7 @@ var _ = Describe("DockerRunner", func() {
 		})
 
 		It("returns combined stdout and stderr and exit status 0", func() {
-			Expect(rj).To(Equal(jobs.RunningJob{
+			Expect(rj).To(Equal(jobs.Build{
 				Job:        jobs.Job{ID: "some-id", Name: "gob", Command: cmd},
 				Output:     output,
 				ExitStatus: 0,
@@ -83,7 +83,7 @@ var _ = Describe("DockerRunner", func() {
 		})
 
 		It("returns combined stdout and stderr and exit status", func() {
-			Expect(rj).To(Equal(jobs.RunningJob{
+			Expect(rj).To(Equal(jobs.Build{
 				Job:        jobs.Job{ID: "some-id", Name: "gob", Command: cmd},
 				Output:     output,
 				ExitStatus: 2,

@@ -16,7 +16,7 @@ import (
 
 //go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
 type JobService interface {
-	RunJob(id string) (jobs.RunningJob, error)
+	RunJob(id string) (jobs.Build, error)
 	Save(job *jobs.Job) error
 }
 

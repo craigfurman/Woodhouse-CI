@@ -8,14 +8,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("RunningJob", func() {
+var _ = Describe("Build", func() {
 	It("returns success when exit status is 0", func() {
-		view := helpers.PresentableJob(jobs.RunningJob{
+		view := helpers.PresentableJob(jobs.Build{
 			Job:        jobs.Job{Name: "ajob"},
 			Output:     "output",
 			ExitStatus: 0,
 		})
-		Expect(view).To(Equal(helpers.RunningJob{
+		Expect(view).To(Equal(helpers.Build{
 			Name:        "ajob",
 			Output:      "output",
 			ExitMessage: "Success",
@@ -23,12 +23,12 @@ var _ = Describe("RunningJob", func() {
 	})
 
 	It("returns failure when exit status is non-zero", func() {
-		view := helpers.PresentableJob(jobs.RunningJob{
+		view := helpers.PresentableJob(jobs.Build{
 			Job:        jobs.Job{Name: "ajob"},
 			Output:     "output",
 			ExitStatus: 42,
 		})
-		Expect(view).To(Equal(helpers.RunningJob{
+		Expect(view).To(Equal(helpers.Build{
 			Name:        "ajob",
 			Output:      "output",
 			ExitMessage: "Failure: exit status 42",

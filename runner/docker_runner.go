@@ -19,16 +19,16 @@ type DockerRunner struct {
 	CommandRunner CommandRunner
 }
 
-func (r *DockerRunner) Run(job jobs.Job) (jobs.RunningJob, error) {
+func (r *DockerRunner) Run(job jobs.Job) (jobs.Build, error) {
 	args := []string{"run", "--rm", "busybox"}
 	args = append(args, r.ArgChunker(job.Command)...)
 	containerCmd := exec.Command("docker", args...)
 	output, exitStatus, err := r.CommandRunner.CombinedOutput(containerCmd)
 	if err != nil {
-		return jobs.RunningJob{}, fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
+		return jobs.Build{}, fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
 	}
 
-	return jobs.RunningJob{
+	return jobs.Build{
 		Job:        job,
 		Output:     string(output),
 		ExitStatus: exitStatus,

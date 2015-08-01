@@ -50,13 +50,13 @@ var _ = Describe("Service", func() {
 		BeforeEach(func() {
 			job := jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"}
 			repo.FindByIdReturns(job, nil)
-			runner.RunReturns(jobs.RunningJob{Job: job, Output: "some output", ExitStatus: 10}, nil)
+			runner.RunReturns(jobs.Build{Job: job, Output: "some output", ExitStatus: 10}, nil)
 		})
 
 		It("runs the job and returns the result", func() {
-			runningJob, err := service.RunJob("some-id")
+			Build, err := service.RunJob("some-id")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(runningJob).To(Equal(jobs.RunningJob{
+			Expect(Build).To(Equal(jobs.Build{
 				Job:        jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"},
 				Output:     "some output",
 				ExitStatus: 10,
@@ -78,7 +78,7 @@ var _ = Describe("Service", func() {
 
 		Context("when running the cannot be started", func() {
 			BeforeEach(func() {
-				runner.RunReturns(jobs.RunningJob{}, errors.New("couldn't start job!"))
+				runner.RunReturns(jobs.Build{}, errors.New("couldn't start job!"))
 			})
 
 			It("returns error", func() {

@@ -8,18 +8,18 @@ import (
 )
 
 type FakeRunner struct {
-	RunStub        func(job jobs.Job) (jobs.RunningJob, error)
+	RunStub        func(job jobs.Job) (jobs.Build, error)
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
 		job jobs.Job
 	}
 	runReturns struct {
-		result1 jobs.RunningJob
+		result1 jobs.Build
 		result2 error
 	}
 }
 
-func (fake *FakeRunner) Run(job jobs.Job) (jobs.RunningJob, error) {
+func (fake *FakeRunner) Run(job jobs.Job) (jobs.Build, error) {
 	fake.runMutex.Lock()
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
 		job jobs.Job
@@ -44,10 +44,10 @@ func (fake *FakeRunner) RunArgsForCall(i int) jobs.Job {
 	return fake.runArgsForCall[i].job
 }
 
-func (fake *FakeRunner) RunReturns(result1 jobs.RunningJob, result2 error) {
+func (fake *FakeRunner) RunReturns(result1 jobs.Build, result2 error) {
 	fake.RunStub = nil
 	fake.runReturns = struct {
-		result1 jobs.RunningJob
+		result1 jobs.Build
 		result2 error
 	}{result1, result2}
 }

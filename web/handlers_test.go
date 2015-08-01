@@ -83,7 +83,7 @@ var _ = Describe("Handlers", func() {
 
 	Describe("job output", func() {
 		It("runs the job syncronously", func() {
-			jobService.RunJobReturns(jobs.RunningJob{
+			jobService.RunJobReturns(jobs.Build{
 				Job:    jobs.Job{Name: "Woodhouse"},
 				Output: "boom!",
 			}, nil)
@@ -98,7 +98,7 @@ var _ = Describe("Handlers", func() {
 
 		Context("when retrieving the job fails", func() {
 			BeforeEach(func() {
-				jobService.RunJobReturns(jobs.RunningJob{}, errors.New("oops!"))
+				jobService.RunJobReturns(jobs.Build{}, errors.New("oops!"))
 			})
 
 			It("shows the error page", func() {
