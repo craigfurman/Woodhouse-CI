@@ -46,6 +46,10 @@ var _ = Describe("DockerRunner", func() {
 		Expect(cmdRunner.CombinedOutputArgsForCall(0).Args[1:]).To(ConsistOf("run", "--rm", "busybox", "some", "args have spaces"))
 	})
 
+	PContext("when the no arguments can be parsed", func() {
+		It("returns error", func() {})
+	})
+
 	JustBeforeEach(func() {
 		job := jobs.Job{ID: "some-id", Name: "gob", Command: cmd}
 		rj, runErr = r.Run(job)
