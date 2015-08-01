@@ -76,7 +76,7 @@ var _ = Describe("Handlers", func() {
 				Eventually(page.Find("form input#name")).Should(BeFound())
 				Expect(page.Find("form input#name").Fill("Alice")).To(Succeed())
 				Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
-				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/error", server.URL)))
+				Eventually(page.Find(".errorTrace")).Should(HaveText("oh dear!"))
 			})
 		})
 	})
@@ -103,7 +103,7 @@ var _ = Describe("Handlers", func() {
 
 			It("shows the error page", func() {
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/some-id/output", server.URL))).To(Succeed())
-				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/error", server.URL)))
+				Eventually(page.Find(".errorTrace")).Should(HaveText("oops!"))
 			})
 		})
 	})

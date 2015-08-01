@@ -51,7 +51,7 @@ func New(jobService JobService, templateDir string) *Handler {
 		if err := jobService.Save(&job); err == nil {
 			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/output", job.ID), 302)
 		} else {
-			errPage("saving job", err, w, r)
+			handler.renderErrPage("saving job", err, w, r)
 		}
 	}).Methods("POST")
 
@@ -60,21 +60,21 @@ func New(jobService JobService, templateDir string) *Handler {
 		if completedJob, err := jobService.RunJob(id); err == nil {
 			handler.renderTemplate("job_output", helpers.PresentableJob(completedJob), w)
 		} else {
-			errPage("retrieving job", err, w, r)
+			handler.renderErrPage("retrieving job", err, w, r)
 		}
-	}).Methods("GET")
-
-	router.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(500)
-		handler.renderTemplate("error", nil, w)
 	}).Methods("GET")
 
 	return handler
 }
 
-func errPage(message string, err error, w http.ResponseWriter, r *http.Request) {
+type Error struct {
+	Error string
+}
+
+func (handler Handler) renderErrPage(message string, err error, w http.ResponseWriter, r *http.Request) {
 	log.Printf("Error: %s: %v", message, err)
-	http.Redirect(w, r, "/error", 302)
+	w.WriteHeader(500)
+	handler.renderTemplate("error", Error{Error: err.Error()}, w)
 }
 
 func (h Handler) renderTemplate(name string, pageObject interface{}, w http.ResponseWriter) {
