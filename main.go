@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,6 +26,7 @@ func main() {
 	templateDir := flag.String("templateDir", filepath.Join(distBase, "web", "templates"), "path to html templates")
 	storeDir := flag.String("storeDir", filepath.Join(distBase, "db"), "directory for saving persistent data")
 	buildsDir := flag.String("buildsDir", filepath.Join(distBase, "builds"), "directory for saving build output")
+	assetsDir := flag.String("assetsDir", filepath.Join(distBase, "web", "assets"), "path to static web assets")
 	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
 	flag.Parse()
 
@@ -46,7 +48,7 @@ func main() {
 		},
 	}, *templateDir)
 
-	server := negroni.Classic()
+	server := negroni.New(negroni.NewRecovery(), negroni.NewLogger(), negroni.NewStatic(http.Dir(*assetsDir)))
 	server.UseHandler(handler)
 	server.Run(fmt.Sprintf("0.0.0.0:%d", *port))
 }

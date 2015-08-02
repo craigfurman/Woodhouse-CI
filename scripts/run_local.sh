@@ -1,3 +1,10 @@
 #!/bin/bash -e
 
-go run $(dirname $0)/../main.go -port 3000 -templateDir $PWD/web/templates -storeDir $PWD/db -buildsDir $PWD/build_output -gooseCmd goose
+project=$(dirname $0)/..
+
+go run $project/main.go -port 3000 \
+    -templateDir $project/web/templates \
+    -storeDir $project/db \
+    -buildsDir $project/build_output \
+    -gooseCmd goose \
+    -assetsDir $project/web/assets

@@ -12,3 +12,4 @@ Look, he thinks he's people!
 * Goose
 * counterfeiter (recommended)
 * godep (recommended)
+* Ruby + bundler gem for compiling stylesheets using compass

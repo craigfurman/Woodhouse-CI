@@ -23,8 +23,13 @@ echo "Compiling binaries"
 go build -o $binDir/goose bitbucket.org/liamstask/goose/cmd/goose
 go build -o $binDir/woodhouse-ci
 
+echo "Compiling stylesheets"
+bundle install
+./scripts/compile_stylesheets.sh
+
 echo "Copying web assets"
 cp -r web/templates $tmpdir/Woodhouse-CI/web
+cp -r web/assets $tmpdir/Woodhouse-CI/web
 
 cp db/dbconf.yml $tmpdir/Woodhouse-CI/db
 cp -r db/migrations $tmpdir/Woodhouse-CI/db
