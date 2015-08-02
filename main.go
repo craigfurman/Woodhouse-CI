@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/craigfurman/woodhouse-ci/builds"
 	"github.com/craigfurman/woodhouse-ci/db"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/runner"
@@ -23,6 +24,7 @@ func main() {
 	port := flag.Uint("port", 8080, "port to listen on")
 	templateDir := flag.String("templateDir", filepath.Join(distBase, "web", "templates"), "path to html templates")
 	storeDir := flag.String("storeDir", filepath.Join(distBase, "db"), "directory for saving persistent data")
+	buildsDir := flag.String("buildsDir", filepath.Join(distBase, "builds"), "directory for saving build output")
 	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
 	flag.Parse()
 
@@ -37,10 +39,10 @@ func main() {
 	must(err)
 
 	handler := web.New(&jobs.Service{
-		Repository: jobRepo,
-		Runner: &runner.DockerRunner{
-			CommandRunner: runner.UnixCommandRunner{},
-			ArgChunker:    runner.Chunk,
+		JobRepository: jobRepo,
+		Runner:        runner.NewDockerRunner(),
+		BuildRepository: &builds.Repository{
+			BuildsDir: *buildsDir,
 		},
 	}, *templateDir)
 

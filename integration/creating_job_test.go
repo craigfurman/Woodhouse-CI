@@ -22,7 +22,7 @@ var _ = Describe("Creating a job", func() {
 
 	It("creates and runs the new job", func() {
 		By("navigating to the jobs page", func() {
-			Expect(page.Navigate("http://localhost:3000/jobs")).To(Succeed())
+			Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
 			Eventually(page.Find("a#newJob")).Should(BeFound())
 		})
 
@@ -36,7 +36,7 @@ var _ = Describe("Creating a job", func() {
 		})
 
 		By("streaming the output from the job", func() {
-			Expect(page.Find("#jobOutput")).To(HaveText("good morning"))
+			Eventually(page.Find("#jobOutput")).Should(HaveText("good morning"))
 		})
 
 		By("indicating that the job ran successfully", func() {
@@ -47,7 +47,7 @@ var _ = Describe("Creating a job", func() {
 	Context("when the job fails", func() {
 		It("creates and runs the new job", func() {
 			By("navigating to the jobs page", func() {
-				Expect(page.Navigate("http://localhost:3000/jobs")).To(Succeed())
+				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
 				Eventually(page.Find("a#newJob")).Should(BeFound())
 			})
 
@@ -61,7 +61,7 @@ var _ = Describe("Creating a job", func() {
 			})
 
 			By("streaming the output from the job", func() {
-				Expect(page.Find("#jobOutput")).To(HaveText("hi"))
+				Eventually(page.Find("#jobOutput")).Should(HaveText("hi"))
 			})
 
 			By("indicating that the job ran successfully", func() {

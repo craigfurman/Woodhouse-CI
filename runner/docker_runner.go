@@ -2,35 +2,39 @@ package runner
 
 import (
 	"fmt"
+	"io"
 	"os/exec"
+	"syscall"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
-type ArgChunker func(string) []string
-
-//go:generate counterfeiter -o fake_command_runner/fake_command_runner.go . CommandRunner
-type CommandRunner interface {
-	CombinedOutput(cmd *exec.Cmd) ([]byte, uint32, error)
-}
-
 type DockerRunner struct {
-	ArgChunker    ArgChunker
-	CommandRunner CommandRunner
+	DockerCmd string
 }
 
-func (r *DockerRunner) Run(job jobs.Job) (jobs.Build, error) {
+func NewDockerRunner() *DockerRunner {
+	return &DockerRunner{DockerCmd: "docker"}
+}
+
+func (r *DockerRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<- uint32) error {
+	defer outputDest.Close()
+
 	args := []string{"run", "--rm", "busybox"}
-	args = append(args, r.ArgChunker(job.Command)...)
-	containerCmd := exec.Command("docker", args...)
-	output, exitStatus, err := r.CommandRunner.CombinedOutput(containerCmd)
-	if err != nil {
-		return jobs.Build{}, fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
+	args = append(args, Chunk(job.Command)...)
+	containerCmd := exec.Command(r.DockerCmd, args...)
+
+	containerCmd.Stdout = outputDest
+	containerCmd.Stderr = outputDest
+	if err := containerCmd.Run(); err != nil {
+		if _, ok := err.(*exec.ExitError); !ok {
+			close(status)
+			return fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
+		}
 	}
 
-	return jobs.Build{
-		Job:        job,
-		Output:     string(output),
-		ExitStatus: exitStatus,
-	}, nil
+	// yep...
+	status <- uint32(containerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
+
+	return nil
 }

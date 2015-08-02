@@ -2,33 +2,37 @@
 package fake_job_runner
 
 import (
+	"io"
 	"sync"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
 type FakeRunner struct {
-	RunStub        func(job jobs.Job) (jobs.Build, error)
+	RunStub        func(job jobs.Job, outputDest io.WriteCloser, status chan<- uint32) error
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
-		job jobs.Job
+		job        jobs.Job
+		outputDest io.WriteCloser
+		status     chan<- uint32
 	}
 	runReturns struct {
-		result1 jobs.Build
-		result2 error
+		result1 error
 	}
 }
 
-func (fake *FakeRunner) Run(job jobs.Job) (jobs.Build, error) {
+func (fake *FakeRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<- uint32) error {
 	fake.runMutex.Lock()
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		job jobs.Job
-	}{job})
+		job        jobs.Job
+		outputDest io.WriteCloser
+		status     chan<- uint32
+	}{job, outputDest, status})
 	fake.runMutex.Unlock()
 	if fake.RunStub != nil {
-		return fake.RunStub(job)
+		return fake.RunStub(job, outputDest, status)
 	} else {
-		return fake.runReturns.result1, fake.runReturns.result2
+		return fake.runReturns.result1
 	}
 }
 
@@ -38,18 +42,17 @@ func (fake *FakeRunner) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeRunner) RunArgsForCall(i int) jobs.Job {
+func (fake *FakeRunner) RunArgsForCall(i int) (jobs.Job, io.WriteCloser, chan<- uint32) {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
-	return fake.runArgsForCall[i].job
+	return fake.runArgsForCall[i].job, fake.runArgsForCall[i].outputDest, fake.runArgsForCall[i].status
 }
 
-func (fake *FakeRunner) RunReturns(result1 jobs.Build, result2 error) {
+func (fake *FakeRunner) RunReturns(result1 error) {
 	fake.RunStub = nil
 	fake.runReturns = struct {
-		result1 jobs.Build
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
 var _ jobs.Runner = new(FakeRunner)

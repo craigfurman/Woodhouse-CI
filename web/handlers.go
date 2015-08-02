@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
@@ -16,8 +17,9 @@ import (
 
 //go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
 type JobService interface {
-	RunJob(id string) (jobs.Build, error)
+	RunJob(id string) error
 	Save(job *jobs.Job) error
+	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
 }
 
 type Handler struct {
@@ -48,16 +50,24 @@ func New(jobService JobService, templateDir string) *Handler {
 			Name:    r.FormValue("name"),
 			Command: r.FormValue("command"),
 		}
-		if err := jobService.Save(&job); err == nil {
-			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/output", job.ID), 302)
-		} else {
+
+		if err := jobService.Save(&job); err != nil {
 			handler.renderErrPage("saving job", err, w, r)
+			return
+		}
+
+		if err := jobService.RunJob(job.ID); err == nil {
+			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/1", job.ID), 302)
+		} else {
+			handler.renderErrPage("running job", err, w, r)
 		}
 	}).Methods("POST")
 
-	router.HandleFunc("/jobs/{id}/output", func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		if completedJob, err := jobService.RunJob(id); err == nil {
+	router.HandleFunc("/jobs/{jobId}/builds/{buildId}", func(w http.ResponseWriter, r *http.Request) {
+		jobId := mux.Vars(r)["jobId"]
+		buildId, err := strconv.Atoi(mux.Vars(r)["buildId"])
+		must(err)
+		if completedJob, err := jobService.FindBuild(jobId, buildId); err == nil {
 			handler.renderTemplate("job_output", helpers.PresentableJob(completedJob), w)
 		} else {
 			handler.renderErrPage("retrieving job", err, w, r)

@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,8 +22,8 @@ func TestIntegration(t *testing.T) {
 var (
 	executablePath    string
 	runningExecutable *gexec.Session
-
-	agoutiDriver *agouti.WebDriver
+	buildsDir         string
+	agoutiDriver      *agouti.WebDriver
 )
 
 var _ = BeforeSuite(func() {
@@ -50,15 +51,20 @@ var _ = BeforeEach(func() {
 	storeDir := filepath.Join(cwd, "..", "db")
 	os.Remove(filepath.Join(storeDir, "sqlite", "store.db"))
 
+	buildsDir, err = ioutil.TempDir("", "integration-builds")
+	Expect(err).NotTo(HaveOccurred())
+
 	runningExecutable, err = gexec.Start(exec.Command(
-		executablePath, "-port=3000",
+		executablePath, "-port=3001",
 		"-templateDir", filepath.Join(cwd, "..", "web", "templates"),
 		"-storeDir", storeDir,
 		"-gooseCmd=goose",
+		"-buildsDir", buildsDir,
 	), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterEach(func() {
 	Eventually(runningExecutable.Kill()).Should(gexec.Exit())
+	Expect(os.RemoveAll(buildsDir)).To(Succeed())
 })

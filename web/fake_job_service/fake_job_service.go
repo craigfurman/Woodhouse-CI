@@ -9,14 +9,13 @@ import (
 )
 
 type FakeJobService struct {
-	RunJobStub        func(id string) (jobs.Build, error)
+	RunJobStub        func(id string) error
 	runJobMutex       sync.RWMutex
 	runJobArgsForCall []struct {
 		id string
 	}
 	runJobReturns struct {
-		result1 jobs.Build
-		result2 error
+		result1 error
 	}
 	SaveStub        func(job *jobs.Job) error
 	saveMutex       sync.RWMutex
@@ -26,9 +25,19 @@ type FakeJobService struct {
 	saveReturns struct {
 		result1 error
 	}
+	FindBuildStub        func(jobId string, buildNumber int) (jobs.Build, error)
+	findBuildMutex       sync.RWMutex
+	findBuildArgsForCall []struct {
+		jobId       string
+		buildNumber int
+	}
+	findBuildReturns struct {
+		result1 jobs.Build
+		result2 error
+	}
 }
 
-func (fake *FakeJobService) RunJob(id string) (jobs.Build, error) {
+func (fake *FakeJobService) RunJob(id string) error {
 	fake.runJobMutex.Lock()
 	fake.runJobArgsForCall = append(fake.runJobArgsForCall, struct {
 		id string
@@ -37,7 +46,7 @@ func (fake *FakeJobService) RunJob(id string) (jobs.Build, error) {
 	if fake.RunJobStub != nil {
 		return fake.RunJobStub(id)
 	} else {
-		return fake.runJobReturns.result1, fake.runJobReturns.result2
+		return fake.runJobReturns.result1
 	}
 }
 
@@ -53,12 +62,11 @@ func (fake *FakeJobService) RunJobArgsForCall(i int) string {
 	return fake.runJobArgsForCall[i].id
 }
 
-func (fake *FakeJobService) RunJobReturns(result1 jobs.Build, result2 error) {
+func (fake *FakeJobService) RunJobReturns(result1 error) {
 	fake.RunJobStub = nil
 	fake.runJobReturns = struct {
-		result1 jobs.Build
-		result2 error
-	}{result1, result2}
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeJobService) Save(job *jobs.Job) error {
@@ -91,6 +99,40 @@ func (fake *FakeJobService) SaveReturns(result1 error) {
 	fake.saveReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeJobService) FindBuild(jobId string, buildNumber int) (jobs.Build, error) {
+	fake.findBuildMutex.Lock()
+	fake.findBuildArgsForCall = append(fake.findBuildArgsForCall, struct {
+		jobId       string
+		buildNumber int
+	}{jobId, buildNumber})
+	fake.findBuildMutex.Unlock()
+	if fake.FindBuildStub != nil {
+		return fake.FindBuildStub(jobId, buildNumber)
+	} else {
+		return fake.findBuildReturns.result1, fake.findBuildReturns.result2
+	}
+}
+
+func (fake *FakeJobService) FindBuildCallCount() int {
+	fake.findBuildMutex.RLock()
+	defer fake.findBuildMutex.RUnlock()
+	return len(fake.findBuildArgsForCall)
+}
+
+func (fake *FakeJobService) FindBuildArgsForCall(i int) (string, int) {
+	fake.findBuildMutex.RLock()
+	defer fake.findBuildMutex.RUnlock()
+	return fake.findBuildArgsForCall[i].jobId, fake.findBuildArgsForCall[i].buildNumber
+}
+
+func (fake *FakeJobService) FindBuildReturns(result1 jobs.Build, result2 error) {
+	fake.FindBuildStub = nil
+	fake.findBuildReturns = struct {
+		result1 jobs.Build
+		result2 error
+	}{result1, result2}
 }
 
 var _ web.JobService = new(FakeJobService)

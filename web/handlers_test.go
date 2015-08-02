@@ -44,6 +44,11 @@ var _ = Describe("Handlers", func() {
 
 	Describe("creating a job", func() {
 		It("saves the job", func() {
+			build := jobs.Build{
+				Job:    jobs.Job{Name: "Woodhouse"},
+				Output: "boom!",
+			}
+
 			By("saving the job using the service", func() {
 				jobService.SaveStub = func(job *jobs.Job) error {
 					Expect(job.Name).To(Equal("Alice"))
@@ -51,6 +56,9 @@ var _ = Describe("Handlers", func() {
 					job.ID = "some-id"
 					return nil
 				}
+
+				jobService.RunJobReturns(nil)
+				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
 				Eventually(page.Find("form input#name")).Should(BeFound())
@@ -61,8 +69,22 @@ var _ = Describe("Handlers", func() {
 				Expect(jobService.SaveCallCount()).To(Equal(1))
 			})
 
-			By("redirecting to the job output", func() {
-				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/some-id/output", server.URL)))
+			By("redirecting to the build output page", func() {
+				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/some-id/builds/1", server.URL)))
+			})
+
+			By("running synchronously", func() {
+				Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
+				Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
+				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+
+				Expect(jobService.RunJobCallCount()).To(Equal(1))
+				Expect(jobService.RunJobArgsForCall(0)).To(Equal("some-id"))
+
+				Expect(jobService.FindBuildCallCount()).To(Equal(1))
+				jobId, buildNumber := jobService.FindBuildArgsForCall(0)
+				Expect(jobId).To(Equal("some-id"))
+				Expect(buildNumber).To(Equal(1))
 			})
 		})
 
@@ -82,27 +104,31 @@ var _ = Describe("Handlers", func() {
 	})
 
 	Describe("job output", func() {
-		It("runs the job syncronously", func() {
-			jobService.RunJobReturns(jobs.Build{
-				Job:    jobs.Job{Name: "Woodhouse"},
-				Output: "boom!",
-			}, nil)
-			Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/output", server.URL))).To(Succeed())
-			Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
-			Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
-			Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+		It("displays the output", func() {
+			By("retrieving the build output", func() {
+				jobService.FindBuildReturns(jobs.Build{
+					Job:    jobs.Job{Name: "Woodhouse"},
+					Output: "boom!",
+				}, nil)
+				Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/builds/1", server.URL))).To(Succeed())
+				Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
+				Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
+				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
 
-			Expect(jobService.RunJobCallCount()).To(Equal(1))
-			Expect(jobService.RunJobArgsForCall(0)).To(Equal("woodhouse-id"))
+				Expect(jobService.FindBuildCallCount()).To(Equal(1))
+				jobId, buildNumber := jobService.FindBuildArgsForCall(0)
+				Expect(jobId).To(Equal("woodhouse-id"))
+				Expect(buildNumber).To(Equal(1))
+			})
 		})
 
 		Context("when retrieving the job fails", func() {
 			BeforeEach(func() {
-				jobService.RunJobReturns(jobs.Build{}, errors.New("oops!"))
+				jobService.FindBuildReturns(jobs.Build{}, errors.New("oops!"))
 			})
 
 			It("shows the error page", func() {
-				Expect(page.Navigate(fmt.Sprintf("%s/jobs/some-id/output", server.URL))).To(Succeed())
+				Expect(page.Navigate(fmt.Sprintf("%s/jobs/some-id/builds/1", server.URL))).To(Succeed())
 				Eventually(page.Find(".errorTrace")).Should(HaveText("oops!"))
 			})
 		})

@@ -7,7 +7,7 @@ import (
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
-type FakeRepository struct {
+type FakeJobRepository struct {
 	SaveStub        func(job *jobs.Job) error
 	saveMutex       sync.RWMutex
 	saveArgsForCall []struct {
@@ -27,7 +27,7 @@ type FakeRepository struct {
 	}
 }
 
-func (fake *FakeRepository) Save(job *jobs.Job) error {
+func (fake *FakeJobRepository) Save(job *jobs.Job) error {
 	fake.saveMutex.Lock()
 	fake.saveArgsForCall = append(fake.saveArgsForCall, struct {
 		job *jobs.Job
@@ -40,26 +40,26 @@ func (fake *FakeRepository) Save(job *jobs.Job) error {
 	}
 }
 
-func (fake *FakeRepository) SaveCallCount() int {
+func (fake *FakeJobRepository) SaveCallCount() int {
 	fake.saveMutex.RLock()
 	defer fake.saveMutex.RUnlock()
 	return len(fake.saveArgsForCall)
 }
 
-func (fake *FakeRepository) SaveArgsForCall(i int) *jobs.Job {
+func (fake *FakeJobRepository) SaveArgsForCall(i int) *jobs.Job {
 	fake.saveMutex.RLock()
 	defer fake.saveMutex.RUnlock()
 	return fake.saveArgsForCall[i].job
 }
 
-func (fake *FakeRepository) SaveReturns(result1 error) {
+func (fake *FakeJobRepository) SaveReturns(result1 error) {
 	fake.SaveStub = nil
 	fake.saveReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeRepository) FindById(id string) (jobs.Job, error) {
+func (fake *FakeJobRepository) FindById(id string) (jobs.Job, error) {
 	fake.findByIdMutex.Lock()
 	fake.findByIdArgsForCall = append(fake.findByIdArgsForCall, struct {
 		id string
@@ -72,19 +72,19 @@ func (fake *FakeRepository) FindById(id string) (jobs.Job, error) {
 	}
 }
 
-func (fake *FakeRepository) FindByIdCallCount() int {
+func (fake *FakeJobRepository) FindByIdCallCount() int {
 	fake.findByIdMutex.RLock()
 	defer fake.findByIdMutex.RUnlock()
 	return len(fake.findByIdArgsForCall)
 }
 
-func (fake *FakeRepository) FindByIdArgsForCall(i int) string {
+func (fake *FakeJobRepository) FindByIdArgsForCall(i int) string {
 	fake.findByIdMutex.RLock()
 	defer fake.findByIdMutex.RUnlock()
 	return fake.findByIdArgsForCall[i].id
 }
 
-func (fake *FakeRepository) FindByIdReturns(result1 jobs.Job, result2 error) {
+func (fake *FakeJobRepository) FindByIdReturns(result1 jobs.Job, result2 error) {
 	fake.FindByIdStub = nil
 	fake.findByIdReturns = struct {
 		result1 jobs.Job
@@ -92,4 +92,4 @@ func (fake *FakeRepository) FindByIdReturns(result1 jobs.Job, result2 error) {
 	}{result1, result2}
 }
 
-var _ jobs.Repository = new(FakeRepository)
+var _ jobs.JobRepository = new(FakeJobRepository)
