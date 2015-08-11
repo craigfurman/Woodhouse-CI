@@ -1,11 +1,14 @@
 package builds_test
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/builds"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 
@@ -21,6 +24,8 @@ var _ = Describe("BuildRepository", func() {
 
 	Describe("Creating a new build", func() {
 		var (
+			jobId = "some-id"
+
 			buildNumber    int
 			outputDest     io.WriteCloser
 			exitStatusChan chan uint32
@@ -28,7 +33,7 @@ var _ = Describe("BuildRepository", func() {
 		)
 
 		JustBeforeEach(func() {
-			buildNumber, outputDest, exitStatusChan, err = repo.Create("some-id")
+			buildNumber, outputDest, exitStatusChan, err = repo.Create(jobId)
 		})
 
 		Context("when the builds directory already exists", func() {
@@ -51,9 +56,10 @@ var _ = Describe("BuildRepository", func() {
 				JustBeforeEach(func() {
 					_, err := outputDest.Write([]byte("output from build"))
 					Expect(err).NotTo(HaveOccurred())
+					Expect(outputDest.Close()).To(Succeed())
 					exitStatusChan <- 42
 					Eventually(func() error {
-						_, err := os.Stat(filepath.Join(buildsDir, "some-id", "1-status.txt"))
+						_, err := os.Stat(filepath.Join(buildsDir, jobId, "1-status.txt"))
 						return err
 					}).ShouldNot(HaveOccurred())
 				})
@@ -65,18 +71,17 @@ var _ = Describe("BuildRepository", func() {
 					)
 
 					JustBeforeEach(func() {
-						b, findErr = repo.Find("some-id", buildNumber)
+						b, findErr = repo.Find(jobId, buildNumber)
 					})
 
-					Context("when the build is finished", func() {
-						It("does not error", func() {
-							Expect(findErr).NotTo(HaveOccurred())
-						})
+					It("does not error", func() {
+						Expect(findErr).NotTo(HaveOccurred())
+					})
 
-						It("returns the build info", func() {
-							Expect(b.Output).To(Equal("output from build"))
-							Expect(b.ExitStatus).To(Equal(uint32(42)))
-						})
+					It("returns the build info", func() {
+						Expect(b.Output).To(Equal([]byte("output from build")))
+						Expect(b.ExitStatus).To(Equal(uint32(42)))
+						Expect(b.Finished).To(BeTrue())
 					})
 
 					Context("when no builds exist for the given Job", func() {
@@ -94,10 +99,156 @@ var _ = Describe("BuildRepository", func() {
 					})
 
 					It("can still find the previous build data", func() {
-						b, err := repo.Find("some-id", buildNumber)
+						b, err := repo.Find(jobId, buildNumber)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(b.Output).To(Equal("output from build"))
+						Expect(b.Output).To(Equal([]byte("output from build")))
 						Expect(b.ExitStatus).To(Equal(uint32(42)))
+						Expect(b.Finished).To(BeTrue())
+					})
+				})
+			})
+
+			Context("when output is being written but the job is not finished", func() {
+				JustBeforeEach(func() {
+					_, err := outputDest.Write([]byte("output from build"))
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					outputDest.Close()
+				})
+
+				Describe("retrieving the build info", func() {
+					var (
+						b       jobs.Build
+						findErr error
+					)
+
+					JustBeforeEach(func() {
+						b, findErr = repo.Find(jobId, buildNumber)
+					})
+
+					It("does not error", func() {
+						Expect(findErr).NotTo(HaveOccurred())
+					})
+
+					It("returns the build info", func() {
+						Expect(b.Output).To(Equal([]byte("output from build")))
+						Expect(b.Finished).To(BeFalse())
+					})
+				})
+
+				Describe("streaming output from the build", func() {
+					var (
+						streamer *blockingio.BlockingReader
+						sErr     error
+
+						jobIdToStream       string
+						buildNumberToStream int
+						startAtByte         int64
+					)
+
+					BeforeEach(func() {
+						startAtByte = 0
+					})
+
+					JustBeforeEach(func() {
+						streamer, sErr = repo.Stream(jobIdToStream, buildNumberToStream, startAtByte)
+					})
+
+					Context("when the jobId and build number are valid", func() {
+						BeforeEach(func() {
+							jobIdToStream = jobId
+							buildNumberToStream = buildNumber
+						})
+
+						AfterEach(func() {
+							if streamer != nil {
+								Expect(streamer.Close()).To(Succeed())
+							}
+						})
+
+						It("does not error", func() {
+							Expect(sErr).NotTo(HaveOccurred())
+						})
+
+						It("blocks on read operations", func() {
+							done := make(chan bool)
+							go func(c chan<- bool) {
+								defer GinkgoRecover()
+								content := []byte{}
+								for {
+									nextBytes, done := streamer.Next()
+									content = append(content, nextBytes...)
+									if done {
+										break
+									}
+								}
+								Expect(content).To(Equal([]byte("output from builda linemore\nlines")))
+								c <- true
+							}(done)
+
+							_, err := outputDest.Write([]byte("a line"))
+							Expect(err).NotTo(HaveOccurred())
+							_, err = outputDest.Write([]byte("more\nlines"))
+							Expect(err).NotTo(HaveOccurred())
+							Expect(outputDest.Close()).To(Succeed())
+							exitStatusChan <- 0
+
+							select {
+							case <-done:
+							case <-time.After(time.Second * 5):
+								Fail("timed out")
+							}
+						})
+
+						Context("when the offset to start at is non-zero", func() {
+							BeforeEach(func() {
+								startAtByte = int64(len([]byte("output from build")))
+							})
+
+							It("blocks on read operations when streaming the output", func() {
+								_, err := outputDest.Write([]byte("further output"))
+								Expect(err).NotTo(HaveOccurred())
+								b, _ := streamer.Next()
+								// Expect(done).To(BeTrue())
+								Expect(b).To(Equal([]byte("further output")))
+							})
+
+							Context("when the offset is negative", func() {
+								BeforeEach(func() {
+									startAtByte = -1
+								})
+
+								It("errors", func() {
+									Expect(sErr).To(MatchError(ContainSubstring("seeking")))
+								})
+							})
+						})
+
+						PContext("when the output cannot be read", func() {
+							It("errors", func() {})
+						})
+					})
+
+					Context("when thejob does not exist", func() {
+						BeforeEach(func() {
+							jobIdToStream = "idontexist"
+						})
+
+						It("errors", func() {
+							Expect(sErr).To(MatchError(ContainSubstring(fmt.Sprintf("streaming output from job: idontexist, build: %d", buildNumber))))
+						})
+					})
+
+					Context("when the build number does not exist", func() {
+						BeforeEach(func() {
+							buildNumberToStream = -1
+						})
+
+						It("errors", func() {
+							Expect(sErr).To(MatchError(ContainSubstring("streaming output from job: idontexist, build: -1")))
+						})
 					})
 				})
 			})

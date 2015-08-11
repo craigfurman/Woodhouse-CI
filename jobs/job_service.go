@@ -3,6 +3,8 @@ package jobs
 import (
 	"fmt"
 	"io"
+
+	"github.com/craigfurman/woodhouse-ci/blockingio"
 )
 
 type Job struct {
@@ -13,7 +15,8 @@ type Job struct {
 
 type Build struct {
 	Job
-	Output     string
+	Finished   bool
+	Output     []byte
 	ExitStatus uint32
 }
 
@@ -27,6 +30,7 @@ type JobRepository interface {
 type BuildRepository interface {
 	Create(jobId string) (int, io.WriteCloser, chan uint32, error)
 	Find(jobId string, buildNumber int) (Build, error)
+	Stream(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error)
 }
 
 //go:generate counterfeiter -o fake_job_runner/fake_job_runner.go . Runner
@@ -73,4 +77,8 @@ func (s *Service) FindBuild(jobId string, buildNumber int) (Build, error) {
 	}
 	build.Job = job
 	return build, nil
+}
+
+func (s *Service) Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error) {
+	return s.BuildRepository.Stream(jobId, buildNumber, streamOffset)
 }

@@ -4,6 +4,7 @@ package fake_job_service
 import (
 	"sync"
 
+	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/web"
 )
@@ -33,6 +34,17 @@ type FakeJobService struct {
 	}
 	findBuildReturns struct {
 		result1 jobs.Build
+		result2 error
+	}
+	StreamStub        func(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error)
+	streamMutex       sync.RWMutex
+	streamArgsForCall []struct {
+		jobId        string
+		buildNumber  int
+		streamOffset int64
+	}
+	streamReturns struct {
+		result1 *blockingio.BlockingReader
 		result2 error
 	}
 }
@@ -131,6 +143,41 @@ func (fake *FakeJobService) FindBuildReturns(result1 jobs.Build, result2 error) 
 	fake.FindBuildStub = nil
 	fake.findBuildReturns = struct {
 		result1 jobs.Build
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeJobService) Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error) {
+	fake.streamMutex.Lock()
+	fake.streamArgsForCall = append(fake.streamArgsForCall, struct {
+		jobId        string
+		buildNumber  int
+		streamOffset int64
+	}{jobId, buildNumber, streamOffset})
+	fake.streamMutex.Unlock()
+	if fake.StreamStub != nil {
+		return fake.StreamStub(jobId, buildNumber, streamOffset)
+	} else {
+		return fake.streamReturns.result1, fake.streamReturns.result2
+	}
+}
+
+func (fake *FakeJobService) StreamCallCount() int {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return len(fake.streamArgsForCall)
+}
+
+func (fake *FakeJobService) StreamArgsForCall(i int) (string, int, int64) {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return fake.streamArgsForCall[i].jobId, fake.streamArgsForCall[i].buildNumber, fake.streamArgsForCall[i].streamOffset
+}
+
+func (fake *FakeJobService) StreamReturns(result1 *blockingio.BlockingReader, result2 error) {
+	fake.StreamStub = nil
+	fake.streamReturns = struct {
+		result1 *blockingio.BlockingReader
 		result2 error
 	}{result1, result2}
 }

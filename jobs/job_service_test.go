@@ -58,13 +58,11 @@ var _ = Describe("Service", func() {
 				job := jobs.Job{ID: "some-id", Name: "jerb", Command: "doStuff"}
 				jobRepo.FindByIdReturns(job, nil)
 				runner.RunStub = func(j jobs.Job, oDest io.WriteCloser, status chan<- uint32) error {
-					println("starting run stub")
 					Expect(j).To(Equal(job))
 					_, err := oDest.Write([]byte("build output!"))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(oDest.Close()).To(Succeed())
 					status <- 10
-					println("finishing run stub")
 					return nil
 				}
 			})
@@ -113,26 +111,25 @@ var _ = Describe("Service", func() {
 	})
 
 	Describe("finding a build", func() {
-		Context("when the build is finished", func() {
-			It("gets the build with complete output from the repository", func() {
-				job := jobs.Job{ID: "some-id", Name: "my fancy job"}
-				build := jobs.Build{Output: "some output", ExitStatus: 9}
-				buildRepo.FindReturns(build, nil)
-				jobRepo.FindByIdReturns(job, nil)
+		It("gets the build with complete output from the repository", func() {
+			job := jobs.Job{ID: "some-id", Name: "my fancy job"}
+			build := jobs.Build{Output: []byte("some output"), ExitStatus: 9, Finished: true}
+			buildRepo.FindReturns(build, nil)
+			jobRepo.FindByIdReturns(job, nil)
 
-				foundBuild, err := service.FindBuild("some-id", 4)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(foundBuild).To(Equal(jobs.Build{
-					Job:        job,
-					Output:     "some output",
-					ExitStatus: 9,
-				}))
+			foundBuild, err := service.FindBuild("some-id", 4)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(foundBuild).To(Equal(jobs.Build{
+				Job:        job,
+				Output:     []byte("some output"),
+				ExitStatus: 9,
+				Finished:   true,
+			}))
 
-				Expect(buildRepo.FindCallCount()).To(Equal(1))
-				jobId, buildNumber := buildRepo.FindArgsForCall(0)
-				Expect(jobId).To(Equal("some-id"))
-				Expect(buildNumber).To(Equal(4))
-			})
+			Expect(buildRepo.FindCallCount()).To(Equal(1))
+			jobId, buildNumber := buildRepo.FindArgsForCall(0)
+			Expect(jobId).To(Equal("some-id"))
+			Expect(buildNumber).To(Equal(4))
 		})
 
 		Context("when finding build fails", func() {

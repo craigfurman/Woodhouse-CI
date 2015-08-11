@@ -5,6 +5,7 @@ import (
 	"io"
 	"sync"
 
+	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
@@ -28,6 +29,17 @@ type FakeBuildRepository struct {
 	}
 	findReturns struct {
 		result1 jobs.Build
+		result2 error
+	}
+	StreamStub        func(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error)
+	streamMutex       sync.RWMutex
+	streamArgsForCall []struct {
+		jobId       string
+		buildNumber int
+		startAtByte int64
+	}
+	streamReturns struct {
+		result1 *blockingio.BlockingReader
 		result2 error
 	}
 }
@@ -97,6 +109,41 @@ func (fake *FakeBuildRepository) FindReturns(result1 jobs.Build, result2 error) 
 	fake.FindStub = nil
 	fake.findReturns = struct {
 		result1 jobs.Build
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBuildRepository) Stream(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error) {
+	fake.streamMutex.Lock()
+	fake.streamArgsForCall = append(fake.streamArgsForCall, struct {
+		jobId       string
+		buildNumber int
+		startAtByte int64
+	}{jobId, buildNumber, startAtByte})
+	fake.streamMutex.Unlock()
+	if fake.StreamStub != nil {
+		return fake.StreamStub(jobId, buildNumber, startAtByte)
+	} else {
+		return fake.streamReturns.result1, fake.streamReturns.result2
+	}
+}
+
+func (fake *FakeBuildRepository) StreamCallCount() int {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return len(fake.streamArgsForCall)
+}
+
+func (fake *FakeBuildRepository) StreamArgsForCall(i int) (string, int, int64) {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return fake.streamArgsForCall[i].jobId, fake.streamArgsForCall[i].buildNumber, fake.streamArgsForCall[i].startAtByte
+}
+
+func (fake *FakeBuildRepository) StreamReturns(result1 *blockingio.BlockingReader, result2 error) {
+	fake.StreamStub = nil
+	fake.streamReturns = struct {
+		result1 *blockingio.BlockingReader
 		result2 error
 	}{result1, result2}
 }

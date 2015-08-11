@@ -60,14 +60,32 @@ func (r *Repository) Find(jobId string, buildNumber int) (jobs.Build, error) {
 	if err != nil {
 		return jobs.Build{}, fmt.Errorf("reading output file for job %s. Cause: %v", jobId, err)
 	}
-	statusFileContents, err := ioutil.ReadFile(filepath.Join(r.BuildsDir, jobId, "1-status.txt"))
+
+	finished, exitStatus, err := r.getBuildExitStatus(jobId)
 	if err != nil {
-		return jobs.Build{}, fmt.Errorf("reading status file for job %s. Cause: %v", jobId, err)
+		return jobs.Build{}, err
+	}
+
+	return jobs.Build{
+		Output:     out,
+		ExitStatus: exitStatus,
+		Finished:   finished,
+	}, nil
+}
+
+func (r *Repository) getBuildExitStatus(jobId string) (bool, uint32, error) {
+	statusFile := filepath.Join(r.BuildsDir, jobId, "1-status.txt")
+	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
+		return false, 0, nil
+	}
+
+	statusFileContents, err := ioutil.ReadFile(statusFile)
+	if err != nil {
+		return false, 0, fmt.Errorf("reading status file for job %s. Cause: %v", jobId, err)
 	}
 	status, err := strconv.Atoi(string(statusFileContents))
 	if err != nil {
-		return jobs.Build{}, fmt.Errorf("converting exit status to integer: %s. Cause: %v", string(statusFileContents), err)
+		return false, 0, fmt.Errorf("converting exit status to integer: %s. Cause: %v", string(statusFileContents), err)
 	}
-
-	return jobs.Build{Output: string(out), ExitStatus: uint32(status)}, nil
+	return true, uint32(status), nil
 }

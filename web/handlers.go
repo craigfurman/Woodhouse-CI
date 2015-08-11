@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/web/helpers"
 
@@ -20,6 +22,7 @@ type JobService interface {
 	RunJob(id string) error
 	Save(job *jobs.Job) error
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
+	Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error)
 }
 
 type Handler struct {
@@ -65,13 +68,53 @@ func New(jobService JobService, templateDir string) *Handler {
 
 	router.HandleFunc("/jobs/{jobId}/builds/{buildId}", func(w http.ResponseWriter, r *http.Request) {
 		jobId := mux.Vars(r)["jobId"]
-		buildId, err := strconv.Atoi(mux.Vars(r)["buildId"])
+		buildIdStr := mux.Vars(r)["buildId"]
+		buildId, err := strconv.Atoi(buildIdStr)
 		must(err)
-		if completedJob, err := jobService.FindBuild(jobId, buildId); err == nil {
-			handler.renderTemplate("job_output", helpers.PresentableJob(completedJob), w)
+		if runningJob, err := jobService.FindBuild(jobId, buildId); err == nil {
+			buildView := helpers.PresentableJob(runningJob)
+			buildView.JobId = jobId
+			buildView.BuildNumber = buildIdStr
+			buildView.BytesAlreadyReceived = len(runningJob.Output)
+			handler.renderTemplate("job_output", buildView, w)
 		} else {
 			handler.renderErrPage("retrieving job", err, w, r)
 		}
+	}).Methods("GET")
+
+	router.HandleFunc("/jobs/{jobId}/builds/{buildId}/output", func(w http.ResponseWriter, r *http.Request) {
+		jobId := mux.Vars(r)["jobId"]
+		buildId, err := strconv.Atoi(mux.Vars(r)["buildId"])
+		must(err)
+
+		must(r.ParseForm())
+		streamOffset, err := strconv.Atoi(r.Form.Get("offset"))
+		must(err)
+
+		streamer, err := jobService.Stream(jobId, buildId, int64(streamOffset))
+		must(err)
+
+		w.Header().Set("Content-Type", "text/event-stream\n\n")
+
+		for {
+			_, err := w.Write([]byte("event: output\n"))
+			must(err)
+			bytes, done := streamer.Next()
+			_, err = w.Write([]byte(fmt.Sprintf("data: %s", helpers.SanitisedHTML(string(bytes)))))
+			must(err)
+			_, err = w.Write([]byte("\n\n"))
+			must(err)
+
+			w.(http.Flusher).Flush()
+
+			if done {
+				break
+			}
+
+			time.Sleep(time.Second)
+		}
+
+		w.Write([]byte("event: end\ndata: {}\n\n"))
 	}).Methods("GET")
 
 	return handler

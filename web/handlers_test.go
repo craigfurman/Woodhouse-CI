@@ -45,8 +45,9 @@ var _ = Describe("Handlers", func() {
 	Describe("creating a job", func() {
 		It("saves the job", func() {
 			build := jobs.Build{
-				Job:    jobs.Job{Name: "Woodhouse"},
-				Output: "boom!",
+				Job:      jobs.Job{Name: "Woodhouse"},
+				Output:   []byte("boom!"),
+				Finished: true,
 			}
 
 			By("saving the job using the service", func() {
@@ -73,7 +74,7 @@ var _ = Describe("Handlers", func() {
 				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/some-id/builds/1", server.URL)))
 			})
 
-			By("running synchronously", func() {
+			By("running job", func() {
 				Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
 				Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
 				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
@@ -104,21 +105,45 @@ var _ = Describe("Handlers", func() {
 	})
 
 	Describe("job output", func() {
-		It("displays the output", func() {
-			By("retrieving the build output", func() {
-				jobService.FindBuildReturns(jobs.Build{
-					Job:    jobs.Job{Name: "Woodhouse"},
-					Output: "boom!",
-				}, nil)
-				Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/builds/1", server.URL))).To(Succeed())
-				Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
-				Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
-				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+		Context("when the job is finished", func() {
+			It("displays the output", func() {
+				By("retrieving the build output", func() {
+					jobService.FindBuildReturns(jobs.Build{
+						Job:      jobs.Job{Name: "Woodhouse"},
+						Output:   []byte("boom!"),
+						Finished: true,
+					}, nil)
+					Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/builds/1", server.URL))).To(Succeed())
+					Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
+					Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
+					Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
 
-				Expect(jobService.FindBuildCallCount()).To(Equal(1))
-				jobId, buildNumber := jobService.FindBuildArgsForCall(0)
-				Expect(jobId).To(Equal("woodhouse-id"))
-				Expect(buildNumber).To(Equal(1))
+					Expect(jobService.FindBuildCallCount()).To(Equal(1))
+					jobId, buildNumber := jobService.FindBuildArgsForCall(0)
+					Expect(jobId).To(Equal("woodhouse-id"))
+					Expect(buildNumber).To(Equal(1))
+				})
+			})
+		})
+
+		Context("when the job is not finished", func() {
+			It("displays the output with pending status", func() {
+				By("retrieving the build output", func() {
+					jobService.FindBuildReturns(jobs.Build{
+						Job:      jobs.Job{Name: "Woodhouse"},
+						Output:   []byte("boom!"),
+						Finished: false,
+					}, nil)
+					Expect(page.Navigate(fmt.Sprintf("%s/jobs/woodhouse-id/builds/1", server.URL))).To(Succeed())
+					Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
+					Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
+					Eventually(page.Find("#jobResult")).Should(HaveText("Running"))
+
+					Expect(jobService.FindBuildCallCount()).To(Equal(1))
+					jobId, buildNumber := jobService.FindBuildArgsForCall(0)
+					Expect(jobId).To(Equal("woodhouse-id"))
+					Expect(buildNumber).To(Equal(1))
+				})
 			})
 		})
 

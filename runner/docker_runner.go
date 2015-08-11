@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	"io"
+	"log"
 	"os/exec"
 	"syscall"
 
@@ -18,23 +19,38 @@ func NewDockerRunner() *DockerRunner {
 }
 
 func (r *DockerRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<- uint32) error {
-	defer outputDest.Close()
+	commandToRun := Chunk(job.Command)
+	if len(commandToRun) == 0 {
+		return fmt.Errorf("No arguments could be parsed from command: %s", job.Command)
+	}
 
 	args := []string{"run", "--rm", "busybox"}
-	args = append(args, Chunk(job.Command)...)
+	args = append(args, commandToRun...)
 	containerCmd := exec.Command(r.DockerCmd, args...)
 
 	containerCmd.Stdout = outputDest
 	containerCmd.Stderr = outputDest
-	if err := containerCmd.Run(); err != nil {
+	if err := containerCmd.Start(); err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
 			close(status)
 			return fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
 		}
 	}
 
-	// yep...
-	status <- uint32(containerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
+	go func() {
+		if err := containerCmd.Wait(); err != nil {
+			if _, ok := err.(*exec.ExitError); !ok {
+				log.Printf("error waiting for job to finish: %v", err)
+			}
+		}
+
+		// yep...
+		status <- uint32(containerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
+
+		if err := outputDest.Close(); err != nil {
+			log.Printf("error closing command output: %v", err)
+		}
+	}()
 
 	return nil
 }
