@@ -12,41 +12,44 @@ import (
 
 var _ = Describe("Build", func() {
 	It("returns success when exit status is 0", func() {
-		view := helpers.PresentableJob(jobs.Build{
+		b := jobs.Build{
 			Job:        jobs.Job{Name: "ajob"},
 			Output:     []byte("output"),
 			ExitStatus: 0,
 			Finished:   true,
-		})
+		}
+		view := helpers.PresentableJob(b)
 		Expect(view).To(Equal(helpers.Build{
-			Name:        "ajob",
+			Build:       b,
 			Output:      "output",
 			ExitMessage: "Success",
 		}))
 	})
 
 	It("returns failure when exit status is non-zero", func() {
-		view := helpers.PresentableJob(jobs.Build{
+		b := jobs.Build{
 			Job:        jobs.Job{Name: "ajob"},
 			Output:     []byte("output"),
 			ExitStatus: 42,
 			Finished:   true,
-		})
+		}
+		view := helpers.PresentableJob(b)
 		Expect(view).To(Equal(helpers.Build{
-			Name:        "ajob",
+			Build:       b,
 			Output:      template.HTML("output"),
 			ExitMessage: "Failure: exit status 42",
 		}))
 	})
 
 	It("returns pending when the build is not finished", func() {
-		view := helpers.PresentableJob(jobs.Build{
+		b := jobs.Build{
 			Job:      jobs.Job{Name: "ajob"},
 			Output:   []byte("output"),
 			Finished: false,
-		})
+		}
+		view := helpers.PresentableJob(b)
 		Expect(view).To(Equal(helpers.Build{
-			Name:        "ajob",
+			Build:       b,
 			Output:      template.HTML("output"),
 			ExitMessage: "Running",
 		}))

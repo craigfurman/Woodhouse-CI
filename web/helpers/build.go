@@ -9,19 +9,20 @@ import (
 )
 
 type Build struct {
-	JobId                string
+	jobs.Build
+
+	Output      template.HTML
+	ExitMessage string
+
 	BuildNumber          string
 	BytesAlreadyReceived int
-	Name                 string
-	Output               template.HTML
-	ExitMessage          string
 }
 
-func PresentableJob(rj jobs.Build) Build {
+func PresentableJob(b jobs.Build) Build {
 	return Build{
-		Name:        rj.Name,
-		Output:      template.HTML(SanitisedHTML(string(rj.Output))),
-		ExitMessage: message(rj),
+		Build:       b,
+		Output:      template.HTML(SanitisedHTML(string(b.Output))),
+		ExitMessage: message(b),
 	}
 }
 

@@ -73,7 +73,6 @@ func New(jobService JobService, templateDir string) *Handler {
 		must(err)
 		if runningJob, err := jobService.FindBuild(jobId, buildId); err == nil {
 			buildView := helpers.PresentableJob(runningJob)
-			buildView.JobId = jobId
 			buildView.BuildNumber = buildIdStr
 			buildView.BytesAlreadyReceived = len(runningJob.Output)
 			handler.renderTemplate("job_output", buildView, w)
