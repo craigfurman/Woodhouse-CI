@@ -9,7 +9,7 @@ $(document).ready(function() {
 	});
 
 	outputEvents.addEventListener("end", function(e) {
-		console.log("caught end event");
+		$('#jobResult').text(e.data);
 		outputEvents.close();
 	});
 });

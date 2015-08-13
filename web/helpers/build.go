@@ -22,7 +22,7 @@ func PresentableJob(b jobs.Build) Build {
 	return Build{
 		Build:       b,
 		Output:      template.HTML(SanitisedHTML(string(b.Output))),
-		ExitMessage: message(b),
+		ExitMessage: Message(b),
 	}
 }
 
@@ -30,7 +30,7 @@ func SanitisedHTML(raw string) string {
 	return strings.Replace(template.HTMLEscapeString(raw), "\n", "<br>", -1)
 }
 
-func message(build jobs.Build) string {
+func Message(build jobs.Build) string {
 	if !build.Finished {
 		return "Running"
 	}

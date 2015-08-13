@@ -110,7 +110,10 @@ func New(jobService JobService, templateDir string) *Handler {
 			}
 		}
 
-		w.Write([]byte("event: end\ndata: {}\n\n"))
+		build, err := jobService.FindBuild(jobId, buildId)
+		must(err)
+
+		w.Write([]byte(fmt.Sprintf("event: end\ndata: %s\n\n", helpers.Message(build))))
 	}).Methods("GET")
 
 	return handler

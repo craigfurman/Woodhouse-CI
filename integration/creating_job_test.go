@@ -41,10 +41,9 @@ var _ = Describe("Creating a job", func() {
 			Eventually(page.Find("#jobOutput")).Should(HaveText("good morning"))
 		})
 
-		// TODO
-		// By("indicating that the job ran successfully", func() {
-		// 	Expect(page.Find("#jobResult")).To(HaveText("Success"))
-		// })
+		By("indicating that the job ran successfully", func() {
+			Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+		})
 	})
 
 	Context("when the job takes a long time to complete", func() {
@@ -78,10 +77,9 @@ var _ = Describe("Creating a job", func() {
 				Eventually(page.Find("#jobOutput"), "5s").Should(HaveText("start\nfinish"))
 			})
 
-			// TODO
-			// By("indicating that the job ran successfully", func() {
-			// 	Expect(page.Find("#jobResult")).To(HaveText("Success"))
-			// })
+			By("indicating that the job ran successfully", func() {
+				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+			})
 		})
 	})
 
@@ -105,10 +103,9 @@ var _ = Describe("Creating a job", func() {
 				Eventually(page.Find("#jobOutput")).Should(HaveText("hi"))
 			})
 
-			// TODO
-			// By("indicating that the job ran successfully", func() {
-			// 	Expect(page.Find("#jobResult")).To(HaveText("Failure: exit status 42"))
-			// })
+			By("indicating that the job ran successfully", func() {
+				Eventually(page.Find("#jobResult")).Should(HaveText("Failure: exit status 42"))
+			})
 		})
 	})
 })
