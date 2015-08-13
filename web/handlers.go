@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
@@ -109,8 +108,6 @@ func New(jobService JobService, templateDir string) *Handler {
 			if done {
 				break
 			}
-
-			time.Sleep(time.Second)
 		}
 
 		w.Write([]byte("event: end\ndata: {}\n\n"))
