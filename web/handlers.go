@@ -95,12 +95,8 @@ func New(jobService JobService, templateDir string) *Handler {
 		w.Header().Set("Content-Type", "text/event-stream\n\n")
 
 		for {
-			_, err := w.Write([]byte("event: output\n"))
-			must(err)
 			bytes, done := streamer.Next()
-			_, err = w.Write([]byte(fmt.Sprintf("data: %s", helpers.SanitisedHTML(string(bytes)))))
-			must(err)
-			_, err = w.Write([]byte("\n\n"))
+			_, err = w.Write([]byte(eventMessage("output", helpers.SanitisedHTML(string(bytes)))))
 			must(err)
 
 			w.(http.Flusher).Flush()
@@ -113,10 +109,14 @@ func New(jobService JobService, templateDir string) *Handler {
 		build, err := jobService.FindBuild(jobId, buildId)
 		must(err)
 
-		w.Write([]byte(fmt.Sprintf("event: end\ndata: %s\n\n", helpers.Message(build))))
+		w.Write([]byte(eventMessage("end", helpers.Message(build))))
 	}).Methods("GET")
 
 	return handler
+}
+
+func eventMessage(eventName, data string) string {
+	return fmt.Sprintf("event: %s\ndata: %s\n\n", eventName, data)
 }
 
 type Error struct {
