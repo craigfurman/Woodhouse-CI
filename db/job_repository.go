@@ -27,13 +27,20 @@ func NewJobRepository(dbPath string) (*JobRepository, error) {
 
 func (repo *JobRepository) Save(job *jobs.Job) error {
 	job.ID = uuid.New()
-	_, err := repo.db.Exec("INSERT INTO jobs(id, name, command) VALUES(?, ?, ?)", job.ID, job.Name, job.Command)
+	_, err := repo.db.Exec(
+		"INSERT INTO jobs(id, name, command, dockerimage) VALUES(?, ?, ?, ?)",
+		job.ID,
+		job.Name,
+		job.Command,
+		job.DockerImage,
+	)
 	return err
 }
 
 func (repo *JobRepository) FindById(id string) (jobs.Job, error) {
 	job := jobs.Job{ID: id}
-	if err := repo.db.QueryRow("SELECT name, command FROM jobs WHERE id=?", id).Scan(&job.Name, &job.Command); err != nil {
+	if err := repo.db.QueryRow("SELECT name, command, dockerimage FROM jobs WHERE id=?", id).
+		Scan(&job.Name, &job.Command, &job.DockerImage); err != nil {
 		return jobs.Job{}, fmt.Errorf("no job found with ID: %s. Cause: %v", id, err)
 	}
 	return job, nil

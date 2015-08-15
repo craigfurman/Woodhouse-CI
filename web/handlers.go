@@ -49,8 +49,9 @@ func New(jobService JobService, templateDir string) *Handler {
 
 	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
 		job := jobs.Job{
-			Name:    r.FormValue("name"),
-			Command: r.FormValue("command"),
+			Name:        r.FormValue("name"),
+			Command:     r.FormValue("command"),
+			DockerImage: r.FormValue("dockerImage"),
 		}
 
 		if err := jobService.Save(&job); err != nil {

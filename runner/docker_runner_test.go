@@ -15,7 +15,8 @@ var _ = Describe("DockerRunner", func() {
 	var (
 		r *runner.DockerRunner
 
-		cmd string
+		cmd    string
+		rootFS string
 
 		runErr     error
 		output     *gbytes.Buffer
@@ -29,9 +30,18 @@ var _ = Describe("DockerRunner", func() {
 	})
 
 	JustBeforeEach(func() {
-		job := jobs.Job{ID: "some-id", Name: "gob", Command: cmd}
+		job := jobs.Job{
+			ID:          "some-id",
+			Name:        "gob",
+			Command:     cmd,
+			DockerImage: rootFS,
+		}
 		runErr = r.Run(job, output, exitStatus)
 		time.Sleep(time.Second * 2)
+	})
+
+	BeforeEach(func() {
+		rootFS = "busybox"
 	})
 
 	Context("when the command succeeds", func() {
@@ -54,6 +64,18 @@ var _ = Describe("DockerRunner", func() {
 		It("closes the output writer", func() {
 			Eventually(output.Closed()).Should(BeTrue())
 		})
+
+		Describe("the docker image for the job", func() {
+			BeforeEach(func() {
+				rootFS = "debian:jessie"
+				cmd = "cat /etc/os-release"
+			})
+
+			It("runs the job using the specified docker image", func() {
+				<-exitStatus
+				Expect(string(output.Contents())).To(ContainSubstring("Debian GNU/Linux 8 (jessie)"))
+			})
+		})
 	})
 
 	Context("when the command returns non-zero exit status", func() {
@@ -67,6 +89,28 @@ var _ = Describe("DockerRunner", func() {
 
 		It("sends the status code", func() {
 			Expect(<-exitStatus).To(Equal(uint32(2)))
+		})
+	})
+
+	Context("when the docker image is not specified", func() {
+		BeforeEach(func() {
+			cmd = "echo hello"
+			rootFS = ""
+		})
+
+		It("errors", func() {
+			Expect(runErr).To(MatchError("you need to specify a docker image when using DockerRunner"))
+		})
+	})
+
+	Context("when the docker image does not exist", func() {
+		BeforeEach(func() {
+			cmd = "echo hello"
+			rootFS = "WoodhouseOS:#notarealthing"
+		})
+
+		It("returns non-zero exit status", func() {
+			Expect(<-exitStatus).ToNot(Equal(uint32(0)))
 		})
 	})
 

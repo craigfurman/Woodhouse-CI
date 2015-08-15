@@ -53,8 +53,10 @@ var _ = Describe("Handlers", func() {
 
 			By("saving the job using the service", func() {
 				jobService.SaveStub = func(job *jobs.Job) error {
+					defer GinkgoRecover()
 					Expect(job.Name).To(Equal("Alice"))
 					Expect(job.Command).To(Equal("bork bork"))
+					Expect(job.DockerImage).To(Equal("user/image:tag"))
 					job.ID = "some-id"
 					return nil
 				}
@@ -63,7 +65,7 @@ var _ = Describe("Handlers", func() {
 				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
-				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork")
+				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork", "user/image:tag")
 
 				Expect(jobService.SaveCallCount()).To(Equal(1))
 			})

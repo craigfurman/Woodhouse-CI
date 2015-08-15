@@ -8,9 +8,10 @@ import (
 )
 
 type Job struct {
-	ID      string
-	Name    string
-	Command string
+	ID          string
+	Name        string
+	DockerImage string
+	Command     string
 }
 
 type Build struct {

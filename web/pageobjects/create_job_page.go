@@ -14,9 +14,10 @@ func NewCreateJobPage(page *agouti.Page) *CreateJobPage {
 	return &CreateJobPage{page: page}
 }
 
-func (p *CreateJobPage) CreateJob(name, cmd string) {
+func (p *CreateJobPage) CreateJob(name, cmd, dockerImage string) {
 	Expect(p.page.Find("form input#name").Fill(name)).To(Succeed())
 	Expect(p.page.Find("form input#command").Fill(cmd)).To(Succeed())
+	Expect(p.page.Find("form input#dockerImage").Fill(dockerImage)).To(Succeed())
 	Expect(p.page.Find("form button[type=submit]").Click()).To(Succeed())
 	Eventually(p.page.Find("#jobTitle")).Should(HaveText(name))
 }

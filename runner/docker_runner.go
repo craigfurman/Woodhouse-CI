@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -24,7 +25,11 @@ func (r *DockerRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<
 		return fmt.Errorf("No arguments could be parsed from command: %s", job.Command)
 	}
 
-	args := []string{"run", "--rm", "busybox"}
+	if job.DockerImage == "" {
+		return errors.New("you need to specify a docker image when using DockerRunner")
+	}
+
+	args := []string{"run", "--rm", job.DockerImage}
 	args = append(args, commandToRun...)
 	containerCmd := exec.Command(r.DockerCmd, args...)
 
