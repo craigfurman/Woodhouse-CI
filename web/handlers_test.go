@@ -10,6 +10,7 @@ import (
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/web"
 	"github.com/craigfurman/woodhouse-ci/web/fake_job_service"
+	"github.com/craigfurman/woodhouse-ci/web/pageobjects"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -45,7 +46,7 @@ var _ = Describe("Handlers", func() {
 	Describe("creating a job", func() {
 		It("saves the job", func() {
 			build := jobs.Build{
-				Job:      jobs.Job{Name: "Woodhouse"},
+				Job:      jobs.Job{Name: "Alice"},
 				Output:   []byte("boom!"),
 				Finished: true,
 			}
@@ -62,10 +63,7 @@ var _ = Describe("Handlers", func() {
 				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
-				Eventually(page.Find("form input#name")).Should(BeFound())
-				Expect(page.Find("form input#name").Fill("Alice")).To(Succeed())
-				Expect(page.Find("form input#command").Fill("bork bork")).To(Succeed())
-				Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
+				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork")
 
 				Expect(jobService.SaveCallCount()).To(Equal(1))
 			})
@@ -75,7 +73,6 @@ var _ = Describe("Handlers", func() {
 			})
 
 			By("running job", func() {
-				Eventually(page.Find("#jobTitle")).Should(HaveText("Woodhouse"))
 				Eventually(page.Find("#jobOutput")).Should(HaveText("boom!"))
 				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
 

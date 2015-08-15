@@ -3,6 +3,7 @@ package integration_test
 import (
 	"time"
 
+	"github.com/craigfurman/woodhouse-ci/web/pageobjects"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/agouti"
@@ -22,15 +23,6 @@ var _ = Describe("Creating a job", func() {
 		Expect(page.Destroy()).To(Succeed())
 	})
 
-	createJob := func(name, cmd string) {
-		Expect(page.Find("a#newJob").Click()).To(Succeed())
-		Eventually(page.Find("form input#name")).Should(BeFound())
-		Expect(page.Find("form input#name").Fill(name)).To(Succeed())
-		Expect(page.Find("form input#command").Fill(cmd)).To(Succeed())
-		Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
-		Eventually(page.Find("#jobTitle")).Should(HaveText(name))
-	}
-
 	It("creates and runs the new job", func() {
 		By("navigating to the jobs page", func() {
 			Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
@@ -38,7 +30,7 @@ var _ = Describe("Creating a job", func() {
 		})
 
 		By("creating the new job", func() {
-			createJob("Bob", "echo good morning")
+			pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "echo good morning")
 		})
 
 		By("streaming the output from the job", func() {
@@ -61,7 +53,7 @@ var _ = Describe("Creating a job", func() {
 				jobSubmitted := make(chan bool)
 				go func(c chan<- bool) {
 					defer GinkgoRecover()
-					createJob("Bob", `sh -c "echo start && sleep 4 && echo finish"`)
+					pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("Bob", `sh -c "echo start && sleep 4 && echo finish"`)
 					c <- true
 				}(jobSubmitted)
 				select {
@@ -90,7 +82,7 @@ var _ = Describe("Creating a job", func() {
 			})
 
 			By("creating the new job", func() {
-				createJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`)
+				pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`)
 			})
 
 			By("streaming the output from the job", func() {
