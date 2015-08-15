@@ -1,7 +1,7 @@
 {{ define "content" }}
 <h2 id="jobTitle">{{ .Name }}</h2>
-<div id="jobResult">{{ .ExitMessage }}</div>
-<div id="jobOutput">{{ .Output }}</div>
+<h3 id="jobResult">{{ .ExitMessage }}</h3>
+<pre id="jobOutput">{{ .Output }}</pre>
 
 <script type="text/javascript" src="/javascript/vendor/jquery/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
