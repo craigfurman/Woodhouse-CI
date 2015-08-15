@@ -22,6 +22,15 @@ var _ = Describe("Creating a job", func() {
 		Expect(page.Destroy()).To(Succeed())
 	})
 
+	createJob := func(name, cmd string) {
+		Expect(page.Find("a#newJob").Click()).To(Succeed())
+		Eventually(page.Find("form input#name")).Should(BeFound())
+		Expect(page.Find("form input#name").Fill(name)).To(Succeed())
+		Expect(page.Find("form input#command").Fill(cmd)).To(Succeed())
+		Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
+		Eventually(page.Find("#jobTitle")).Should(HaveText(name))
+	}
+
 	It("creates and runs the new job", func() {
 		By("navigating to the jobs page", func() {
 			Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
@@ -29,12 +38,7 @@ var _ = Describe("Creating a job", func() {
 		})
 
 		By("creating the new job", func() {
-			Expect(page.Find("a#newJob").Click()).To(Succeed())
-			Eventually(page.Find("form input#name")).Should(BeFound())
-			Expect(page.Find("form input#name").Fill("Bob")).To(Succeed())
-			Expect(page.Find("form input#command").Fill("echo good morning")).To(Succeed())
-			Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
-			Eventually(page.Find("#jobTitle")).Should(HaveText("Bob"))
+			createJob("Bob", "echo good morning")
 		})
 
 		By("streaming the output from the job", func() {
@@ -54,15 +58,10 @@ var _ = Describe("Creating a job", func() {
 			})
 
 			By("creating the new job", func() {
-				Expect(page.Find("a#newJob").Click()).To(Succeed())
-				Eventually(page.Find("form input#name")).Should(BeFound())
-				Expect(page.Find("form input#name").Fill("Bob")).To(Succeed())
-				Expect(page.Find("form input#command").Fill(`sh -c "echo start && sleep 4 && echo finish"`)).To(Succeed())
-
 				jobSubmitted := make(chan bool)
 				go func(c chan<- bool) {
 					defer GinkgoRecover()
-					Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
+					createJob("Bob", `sh -c "echo start && sleep 4 && echo finish"`)
 					c <- true
 				}(jobSubmitted)
 				select {
@@ -91,12 +90,7 @@ var _ = Describe("Creating a job", func() {
 			})
 
 			By("creating the new job", func() {
-				Expect(page.Find("a#newJob").Click()).To(Succeed())
-				Eventually(page.Find("form input#name")).Should(BeFound())
-				Expect(page.Find("form input#name").Fill("FailedJob")).To(Succeed())
-				Expect(page.Find("form input#command").Fill(`sh -c "echo hi >&2 && exit 42"`)).To(Succeed())
-				Expect(page.Find("form button[type=submit]").Click()).To(Succeed())
-				Eventually(page.Find("#jobTitle")).Should(HaveText("FailedJob"))
+				createJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`)
 			})
 
 			By("streaming the output from the job", func() {
