@@ -33,6 +33,16 @@ func main() {
 	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
 	flag.Parse()
 
+	bootMsg := ` _    _                 _ _                                 _____ _____
+| |  | |               | | |                               /  __ \_   _|
+| |  | | ___   ___   __| | |__   ___  _   _ ___  ___ ______| /  \/ | |
+| |/\| |/ _ \ / _ \ / _` + "`" + ` | '_ \ / _ \| | | / __|/ _ \______| |     | |
+\  /\  / (_) | (_) | (_| | | | | (_) | |_| \__ \  __/      | \__/\_| |_
+ \/  \/ \___/ \___/ \__,_|_| |_|\___/ \__,_|___/\___|       \____/\___/
+`
+
+	fmt.Println(bootMsg)
+
 	dbDir := filepath.Join(*storeDir, "sqlite")
 	must(os.MkdirAll(dbDir, 0755))
 
