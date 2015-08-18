@@ -57,6 +57,7 @@ var _ = Describe("Handlers", func() {
 					Expect(job.Name).To(Equal("Alice"))
 					Expect(job.Command).To(Equal("bork bork"))
 					Expect(job.DockerImage).To(Equal("user/image:tag"))
+					Expect(job.GitRepository).To(Equal("some-repo.git"))
 					job.ID = "some-id"
 					return nil
 				}
@@ -65,7 +66,7 @@ var _ = Describe("Handlers", func() {
 				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
-				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork", "user/image:tag")
+				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork", "user/image:tag", "some-repo.git")
 
 				Expect(jobService.SaveCallCount()).To(Equal(1))
 			})

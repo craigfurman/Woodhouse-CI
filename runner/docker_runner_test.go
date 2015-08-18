@@ -1,10 +1,15 @@
 package runner_test
 
 import (
+	"errors"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/runner"
+	"github.com/craigfurman/woodhouse-ci/runner/fake_vcs_fetcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,10 +18,12 @@ import (
 
 var _ = Describe("DockerRunner", func() {
 	var (
-		r *runner.DockerRunner
+		r          *runner.DockerRunner
+		vcsFetcher *fake_vcs_fetcher.FakeVcsFetcher
 
-		cmd    string
-		rootFS string
+		cmd           string
+		rootFS        string
+		gitRepository string
 
 		runErr     error
 		output     *gbytes.Buffer
@@ -24,17 +31,19 @@ var _ = Describe("DockerRunner", func() {
 	)
 
 	BeforeEach(func() {
-		r = runner.NewDockerRunner()
+		vcsFetcher = new(fake_vcs_fetcher.FakeVcsFetcher)
+		r = runner.NewDockerRunner(vcsFetcher)
 		output = gbytes.NewBuffer()
 		exitStatus = make(chan uint32, 1)
 	})
 
 	JustBeforeEach(func() {
 		job := jobs.Job{
-			ID:          "some-id",
-			Name:        "gob",
-			Command:     cmd,
-			DockerImage: rootFS,
+			ID:            "some-id",
+			Name:          "gob",
+			Command:       cmd,
+			DockerImage:   rootFS,
+			GitRepository: gitRepository,
 		}
 		runErr = r.Run(job, output, exitStatus)
 		time.Sleep(time.Second * 2)
@@ -42,6 +51,7 @@ var _ = Describe("DockerRunner", func() {
 
 	BeforeEach(func() {
 		rootFS = "busybox"
+		gitRepository = ""
 	})
 
 	Context("when the command succeeds", func() {
@@ -63,6 +73,64 @@ var _ = Describe("DockerRunner", func() {
 
 		It("closes the output writer", func() {
 			Eventually(output.Closed()).Should(BeTrue())
+		})
+
+		Context("and the job has no git repository", func() {
+			It("does not fetch from any repository", func() {
+				Expect(vcsFetcher.FetchCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("and the job has a git repository", func() {
+			var repoDir string
+
+			BeforeEach(func() {
+				var err error
+				repoDir, err = ioutil.TempDir("", "docker-runner-unit-tests")
+				Expect(err).NotTo(HaveOccurred())
+				f, err := os.Create(filepath.Join(repoDir, "test.txt"))
+				Expect(err).NotTo(HaveOccurred())
+				_, err = f.Write([]byte("hello from tests!"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(f.Close()).To(Succeed())
+
+				vcsFetcher.FetchReturns(repoDir, nil)
+				gitRepository = "some-repo"
+				cmd = "cat test.txt"
+			})
+
+			itRemovesTheRepo := func() {
+				It("removes the repo", func() {
+					Eventually(func() bool {
+						_, err := os.Stat(repoDir)
+						return os.IsNotExist(err)
+					}).Should(BeTrue())
+				})
+			}
+
+			itRemovesTheRepo()
+
+			It("runs the job with the repo mounted in the container as cwd", func() {
+				Eventually(output).Should(gbytes.Say("hello from tests!"))
+				repo, _ := vcsFetcher.FetchArgsForCall(0)
+				Expect(repo).To(Equal("some-repo"))
+			})
+
+			Context("when fetching fails", func() {
+				BeforeEach(func() {
+					vcsFetcher.FetchReturns(repoDir, errors.New("oops"))
+				})
+
+				It("does not error", func() {
+					Expect(runErr).NotTo(HaveOccurred())
+				})
+
+				It("sends exit status 1", func() {
+					Expect(<-exitStatus).To(Equal(uint32(1)))
+				})
+
+				itRemovesTheRepo()
+			})
 		})
 
 		Describe("the docker image for the job", func() {
@@ -120,8 +188,8 @@ var _ = Describe("DockerRunner", func() {
 			cmd = "somecmd"
 		})
 
-		It("errors", func() {
-			Expect(runErr).To(MatchError(ContainSubstring("running command: somecmd")))
+		It("sends exit status 1 to represent failure to fork", func() {
+			Expect(<-exitStatus).To(Equal(uint32(1)))
 		})
 	})
 

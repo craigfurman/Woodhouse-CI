@@ -5,6 +5,7 @@ Look, he thinks he's people!
 
 ### For running Woodhouse-CI:
 * Docker
+* Git
 
 ### For contribuing to Woodhouse-CI:
 * Chromedriver (if running headed browser tests)

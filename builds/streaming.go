@@ -9,7 +9,7 @@ import (
 )
 
 func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error) {
-	outputFile, err := os.Open(filepath.Join(r.BuildsDir, jobId, "1-output.txt"))
+	outputFile, err := os.Open(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-output.txt", buildNumber)))
 	if err != nil {
 		return nil, fmt.Errorf("streaming output from job: %s, build: %d. Cause: %v", jobId, buildNumber, err)
 	}

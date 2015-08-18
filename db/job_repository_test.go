@@ -43,9 +43,10 @@ var _ = Describe("JobRepository", func() {
 
 		BeforeEach(func() {
 			savedJob = &jobs.Job{
-				Name:        "myFancyJob",
-				Command:     "my CI script",
-				DockerImage: "someUser/someName:someTag",
+				Name:          "myFancyJob",
+				Command:       "my CI script",
+				DockerImage:   "someUser/someName:someTag",
+				GitRepository: "sweet potato",
 			}
 			saveJobErr = repo.Save(savedJob)
 		})
@@ -63,10 +64,11 @@ var _ = Describe("JobRepository", func() {
 				job, err := repo.FindById(savedJob.ID)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(job).To(Equal(jobs.Job{
-					ID:          savedJob.ID,
-					Name:        "myFancyJob",
-					Command:     "my CI script",
-					DockerImage: "someUser/someName:someTag",
+					ID:            savedJob.ID,
+					Name:          "myFancyJob",
+					Command:       "my CI script",
+					DockerImage:   "someUser/someName:someTag",
+					GitRepository: "sweet potato",
 				}))
 			})
 

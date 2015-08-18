@@ -5,18 +5,25 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"syscall"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
-type DockerRunner struct {
-	DockerCmd string
+//go:generate counterfeiter -o fake_vcs_fetcher/fake_vcs_fetcher.go . VcsFetcher
+type VcsFetcher interface {
+	Fetch(repository string, outputSink io.Writer) (string, error)
 }
 
-func NewDockerRunner() *DockerRunner {
-	return &DockerRunner{DockerCmd: "docker"}
+type DockerRunner struct {
+	DockerCmd  string
+	VcsFetcher VcsFetcher
+}
+
+func NewDockerRunner(vcsFetcher VcsFetcher) *DockerRunner {
+	return &DockerRunner{DockerCmd: "docker", VcsFetcher: vcsFetcher}
 }
 
 func (r *DockerRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<- uint32) error {
@@ -29,32 +36,49 @@ func (r *DockerRunner) Run(job jobs.Job, outputDest io.WriteCloser, status chan<
 		return errors.New("you need to specify a docker image when using DockerRunner")
 	}
 
-	args := []string{"run", "--rm", job.DockerImage}
-	args = append(args, commandToRun...)
-	containerCmd := exec.Command(r.DockerCmd, args...)
-
-	containerCmd.Stdout = outputDest
-	containerCmd.Stderr = outputDest
-	if err := containerCmd.Start(); err != nil {
-		if _, ok := err.(*exec.ExitError); !ok {
-			close(status)
-			return fmt.Errorf("running command: %s. Cause: %v", job.Command, err)
-		}
-	}
-
 	go func() {
-		if err := containerCmd.Wait(); err != nil {
+		defer func() {
+			if err := outputDest.Close(); err != nil {
+				log.Printf("error closing command output: %v", err)
+			}
+		}()
+
+		args := []string{"run", "--rm"}
+
+		if job.GitRepository != "" {
+			checkoutDir, err := r.VcsFetcher.Fetch(job.GitRepository, outputDest)
+
+			defer func() {
+				if err := os.RemoveAll(checkoutDir); err != nil {
+					log.Printf("error removing checkout dir: %s, cause %v\n", checkoutDir, err)
+				}
+			}()
+
+			if err != nil {
+				log.Printf("error fetching repository from vcs: cause: %v\n", err)
+				status <- uint32(1)
+				return
+			}
+
+			args = append(args, "-v", fmt.Sprintf("%s:/woodhouse-workspace", checkoutDir), "--workdir", "/woodhouse-workspace")
+		}
+
+		args = append(args, job.DockerImage)
+		args = append(args, commandToRun...)
+		containerCmd := exec.Command(r.DockerCmd, args...)
+		containerCmd.Stdout = outputDest
+		containerCmd.Stderr = outputDest
+
+		if err := containerCmd.Run(); err != nil {
 			if _, ok := err.(*exec.ExitError); !ok {
-				log.Printf("error waiting for job to finish: %v", err)
+				log.Printf("error running job: %v", err)
+				status <- uint32(1)
+				return
 			}
 		}
 
 		// yep...
 		status <- uint32(containerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
-
-		if err := outputDest.Close(); err != nil {
-			log.Printf("error closing command output: %v", err)
-		}
 	}()
 
 	return nil

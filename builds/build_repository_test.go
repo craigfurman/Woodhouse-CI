@@ -149,6 +149,8 @@ var _ = Describe("BuildRepository", func() {
 					)
 
 					BeforeEach(func() {
+						jobIdToStream = jobId
+						buildNumberToStream = 1
 						startAtByte = 0
 					})
 
@@ -157,11 +159,6 @@ var _ = Describe("BuildRepository", func() {
 					})
 
 					Context("when the jobId and build number are valid", func() {
-						BeforeEach(func() {
-							jobIdToStream = jobId
-							buildNumberToStream = buildNumber
-						})
-
 						AfterEach(func() {
 							if streamer != nil {
 								Expect(streamer.Close()).To(Succeed())
@@ -169,6 +166,8 @@ var _ = Describe("BuildRepository", func() {
 						})
 
 						It("does not error", func() {
+							Expect(buildNumber).To(Equal(1))
+							Expect(buildNumberToStream).To(Equal(1))
 							Expect(sErr).NotTo(HaveOccurred())
 						})
 
@@ -237,7 +236,7 @@ var _ = Describe("BuildRepository", func() {
 						})
 
 						It("errors", func() {
-							Expect(sErr).To(MatchError(ContainSubstring(fmt.Sprintf("streaming output from job: idontexist, build: %d", buildNumber))))
+							Expect(sErr).To(MatchError(ContainSubstring(fmt.Sprintf("streaming output from job: idontexist, build: %d", buildNumberToStream))))
 						})
 					})
 
@@ -247,7 +246,7 @@ var _ = Describe("BuildRepository", func() {
 						})
 
 						It("errors", func() {
-							Expect(sErr).To(MatchError(ContainSubstring("streaming output from job: idontexist, build: -1")))
+							Expect(sErr).To(MatchError(ContainSubstring("streaming output from job: some-id, build: -1")))
 						})
 					})
 				})

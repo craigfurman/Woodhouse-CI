@@ -13,6 +13,7 @@ import (
 	"github.com/craigfurman/woodhouse-ci/db"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/runner"
+	"github.com/craigfurman/woodhouse-ci/vcs"
 	"github.com/craigfurman/woodhouse-ci/web"
 
 	"github.com/codegangsta/negroni"
@@ -55,7 +56,7 @@ func main() {
 
 	handler := web.New(&jobs.Service{
 		JobRepository: jobRepo,
-		Runner:        runner.NewDockerRunner(),
+		Runner:        runner.NewDockerRunner(vcs.GitCloner{}),
 		BuildRepository: &builds.Repository{
 			BuildsDir: *buildsDir,
 		},
