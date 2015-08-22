@@ -14,12 +14,15 @@ import (
 
 var _ = Describe("JobRepository", func() {
 
-	var repo *db.JobRepository
+	var (
+		repo   *db.JobRepository
+		dbPath string
+	)
 
 	BeforeEach(func() {
 		cwd, err := os.Getwd()
 		Expect(err).NotTo(HaveOccurred())
-		dbPath := filepath.Join(cwd, "sqlite", "store.db")
+		dbPath = filepath.Join(cwd, "sqlite", "store.db")
 		os.Remove(dbPath)
 		migrateCmd := exec.Command("goose", "up")
 		migrateCmd.Dir = filepath.Join(cwd, "..")
@@ -27,7 +30,7 @@ var _ = Describe("JobRepository", func() {
 		migrateCmd.Stderr = GinkgoWriter
 		Expect(migrateCmd.Run()).To(Succeed())
 
-		repo, err = db.NewJobRepository(dbPath)
+		repo, err = db.NewJobRepository(dbPath, "a very secure password")
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -37,6 +40,8 @@ var _ = Describe("JobRepository", func() {
 
 	Describe("creating a job", func() {
 		var (
+			secret = "It's a secret to everybody."
+
 			savedJob   *jobs.Job
 			saveJobErr error
 		)
@@ -47,6 +52,7 @@ var _ = Describe("JobRepository", func() {
 				Command:       "my CI script",
 				DockerImage:   "someUser/someName:someTag",
 				GitRepository: "sweet potato",
+				GitPassword:   secret,
 			}
 			saveJobErr = repo.Save(savedJob)
 		})
@@ -59,6 +65,8 @@ var _ = Describe("JobRepository", func() {
 			Expect(savedJob.ID).ToNot(BeEmpty())
 		})
 
+		// TODO optional git credentials
+
 		Describe("retrieving the job", func() {
 			It("retrieves the job", func() {
 				job, err := repo.FindById(savedJob.ID)
@@ -69,6 +77,7 @@ var _ = Describe("JobRepository", func() {
 					Command:       "my CI script",
 					DockerImage:   "someUser/someName:someTag",
 					GitRepository: "sweet potato",
+					GitPassword:   secret,
 				}))
 			})
 
@@ -76,6 +85,18 @@ var _ = Describe("JobRepository", func() {
 				It("returns error", func() {
 					_, err := repo.FindById("idontexist")
 					Expect(err).To(MatchError(ContainSubstring("no job found with ID: idontexist")))
+				})
+			})
+
+			Context("when the encryption key is wrong", func() {
+				BeforeEach(func() {
+					repo.SkeletonKey = []byte("abcdefghabcdefghabcdefghabcdefgh")
+				})
+
+				It("cannot decrypt the git password", func() {
+					job, err := repo.FindById(savedJob.ID)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(job.GitPassword).ToNot(Equal(secret))
 				})
 			})
 		})

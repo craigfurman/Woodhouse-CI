@@ -41,6 +41,10 @@
 			"ImportPath": "github.com/sclevine/agouti",
 			"Comment": "v2-latest-27-g547867f",
 			"Rev": "547867f76f1c76d9d5380db4bf27deedd12ec367"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh/terminal",
+			"Rev": "81bf7719a6b7ce9b665598222362b50122dfc13b"
 		}
 	]
 }

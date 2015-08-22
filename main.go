@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"syscall"
 
 	"github.com/craigfurman/woodhouse-ci/builds"
 	"github.com/craigfurman/woodhouse-ci/db"
@@ -17,6 +18,7 @@ import (
 	"github.com/craigfurman/woodhouse-ci/web"
 
 	"github.com/codegangsta/negroni"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
@@ -32,7 +34,12 @@ func main() {
 	buildsDir := flag.String("buildsDir", filepath.Join(distBase, "builds"), "directory for saving build output")
 	assetsDir := flag.String("assetsDir", filepath.Join(distBase, "web", "assets"), "path to static web assets")
 	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
+	masterPassword := flag.String("masterPassword", "", "AES key to encrypt secrets with")
 	flag.Parse()
+
+	if *masterPassword == "" {
+		*masterPassword = getMasterPassword()
+	}
 
 	bootMsg := ` _    _                 _ _                                 _____ _____
 | |  | |               | | |                               /  __ \_   _|
@@ -51,7 +58,7 @@ func main() {
 	migrateCmd.Dir = filepath.Join(*storeDir, "..")
 	must(migrateCmd.Run())
 
-	jobRepo, err := db.NewJobRepository(filepath.Join(dbDir, "store.db"))
+	jobRepo, err := db.NewJobRepository(filepath.Join(dbDir, "store.db"), *masterPassword)
 	must(err)
 
 	handler := web.New(&jobs.Service{
@@ -65,6 +72,14 @@ func main() {
 	server := negroni.New(negroni.NewRecovery(), negroni.NewLogger(), negroni.NewStatic(http.Dir(*assetsDir)))
 	server.UseHandler(handler)
 	server.Run(fmt.Sprintf("0.0.0.0:%d", *port))
+}
+
+func getMasterPassword() string {
+	fmt.Print("Enter encryption key: ")
+	password, err := terminal.ReadPassword(syscall.Stdin)
+	must(err)
+	fmt.Println("")
+	return string(password)
 }
 
 func must(err error) {

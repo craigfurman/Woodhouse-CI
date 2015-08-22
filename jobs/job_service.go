@@ -8,11 +8,14 @@ import (
 )
 
 type Job struct {
-	ID            string
-	Name          string
+	ID   string
+	Name string
+
 	GitRepository string
-	DockerImage   string
-	Command       string
+	GitPassword   string
+
+	DockerImage string
+	Command     string
 }
 
 type Build struct {

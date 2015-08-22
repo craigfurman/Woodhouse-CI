@@ -63,6 +63,7 @@ var _ = BeforeEach(func() {
 		"-gooseCmd=goose",
 		"-buildsDir", buildsDir,
 		"-assetsDir", filepath.Join(cwd, "..", "web", "assets"),
+		"-masterPassword=encryptionKey",
 	), GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 })
