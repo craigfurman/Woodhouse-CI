@@ -20,6 +20,7 @@ mkdir $tmpdir/Woodhouse-CI/db
 mkdir -p out
 
 echo "Compiling binaries"
+export GOPATH=$PWD/Godeps/_workspace:$GOPATH
 go build -o $binDir/goose bitbucket.org/liamstask/goose/cmd/goose
 go build -o $binDir/woodhouse-ci
 
