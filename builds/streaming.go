@@ -23,5 +23,9 @@ func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*
 		return !os.IsNotExist(err)
 	}
 
-	return &blockingio.BlockingReader{Output: outputFile, DoneWriting: doneWriting}, nil
+	return &blockingio.BlockingReader{
+		Output:      outputFile,
+		DoneWriting: doneWriting,
+		Buffer:      make([]byte, 4096),
+	}, nil
 }

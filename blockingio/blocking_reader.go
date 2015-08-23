@@ -3,15 +3,13 @@ package blockingio
 import (
 	"io"
 	"log"
-	"os"
 	"time"
 )
 
-var buf = make([]byte, 1024)
-
 type BlockingReader struct {
-	Output      *os.File
+	Output      io.ReadCloser
 	DoneWriting func() bool
+	Buffer      []byte
 }
 
 func (r *BlockingReader) Next() ([]byte, bool) {
@@ -20,15 +18,18 @@ func (r *BlockingReader) Next() ([]byte, bool) {
 	done := false
 	for bytesRead < 1 && !done {
 		done = r.DoneWriting()
-		bytesRead, err = r.Output.Read(buf)
+		bytesRead, err = r.Output.Read(r.Buffer)
 		if err != nil && err != io.EOF {
 			log.Printf("error streaming output file. Cause: %v\n", err)
 		}
 		if !done {
 			time.Sleep(time.Millisecond * 25)
 		}
+		if bytesRead == len(r.Buffer) {
+			done = false
+		}
 	}
-	return buf[:bytesRead], done
+	return r.Buffer[:bytesRead], done
 }
 
 func (r *BlockingReader) Close() error {

@@ -108,6 +108,8 @@ func New(jobService JobService, templateDir string) *Handler {
 			}
 		}
 
+		must(streamer.Close())
+
 		build, err := jobService.FindBuild(jobId, buildId)
 		must(err)
 
