@@ -10,13 +10,12 @@ import (
 )
 
 type FakeJobService struct {
-	RunJobStub        func(id string) error
-	runJobMutex       sync.RWMutex
-	runJobArgsForCall []struct {
-		id string
-	}
-	runJobReturns struct {
-		result1 error
+	ListJobsStub        func() ([]jobs.Job, error)
+	listJobsMutex       sync.RWMutex
+	listJobsArgsForCall []struct{}
+	listJobsReturns     struct {
+		result1 []jobs.Job
+		result2 error
 	}
 	SaveStub        func(job *jobs.Job) error
 	saveMutex       sync.RWMutex
@@ -24,6 +23,14 @@ type FakeJobService struct {
 		job *jobs.Job
 	}
 	saveReturns struct {
+		result1 error
+	}
+	RunJobStub        func(id string) error
+	runJobMutex       sync.RWMutex
+	runJobArgsForCall []struct {
+		id string
+	}
+	runJobReturns struct {
 		result1 error
 	}
 	FindBuildStub        func(jobId string, buildNumber int) (jobs.Build, error)
@@ -49,36 +56,29 @@ type FakeJobService struct {
 	}
 }
 
-func (fake *FakeJobService) RunJob(id string) error {
-	fake.runJobMutex.Lock()
-	fake.runJobArgsForCall = append(fake.runJobArgsForCall, struct {
-		id string
-	}{id})
-	fake.runJobMutex.Unlock()
-	if fake.RunJobStub != nil {
-		return fake.RunJobStub(id)
+func (fake *FakeJobService) ListJobs() ([]jobs.Job, error) {
+	fake.listJobsMutex.Lock()
+	fake.listJobsArgsForCall = append(fake.listJobsArgsForCall, struct{}{})
+	fake.listJobsMutex.Unlock()
+	if fake.ListJobsStub != nil {
+		return fake.ListJobsStub()
 	} else {
-		return fake.runJobReturns.result1
+		return fake.listJobsReturns.result1, fake.listJobsReturns.result2
 	}
 }
 
-func (fake *FakeJobService) RunJobCallCount() int {
-	fake.runJobMutex.RLock()
-	defer fake.runJobMutex.RUnlock()
-	return len(fake.runJobArgsForCall)
+func (fake *FakeJobService) ListJobsCallCount() int {
+	fake.listJobsMutex.RLock()
+	defer fake.listJobsMutex.RUnlock()
+	return len(fake.listJobsArgsForCall)
 }
 
-func (fake *FakeJobService) RunJobArgsForCall(i int) string {
-	fake.runJobMutex.RLock()
-	defer fake.runJobMutex.RUnlock()
-	return fake.runJobArgsForCall[i].id
-}
-
-func (fake *FakeJobService) RunJobReturns(result1 error) {
-	fake.RunJobStub = nil
-	fake.runJobReturns = struct {
-		result1 error
-	}{result1}
+func (fake *FakeJobService) ListJobsReturns(result1 []jobs.Job, result2 error) {
+	fake.ListJobsStub = nil
+	fake.listJobsReturns = struct {
+		result1 []jobs.Job
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeJobService) Save(job *jobs.Job) error {
@@ -109,6 +109,38 @@ func (fake *FakeJobService) SaveArgsForCall(i int) *jobs.Job {
 func (fake *FakeJobService) SaveReturns(result1 error) {
 	fake.SaveStub = nil
 	fake.saveReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeJobService) RunJob(id string) error {
+	fake.runJobMutex.Lock()
+	fake.runJobArgsForCall = append(fake.runJobArgsForCall, struct {
+		id string
+	}{id})
+	fake.runJobMutex.Unlock()
+	if fake.RunJobStub != nil {
+		return fake.RunJobStub(id)
+	} else {
+		return fake.runJobReturns.result1
+	}
+}
+
+func (fake *FakeJobService) RunJobCallCount() int {
+	fake.runJobMutex.RLock()
+	defer fake.runJobMutex.RUnlock()
+	return len(fake.runJobArgsForCall)
+}
+
+func (fake *FakeJobService) RunJobArgsForCall(i int) string {
+	fake.runJobMutex.RLock()
+	defer fake.runJobMutex.RUnlock()
+	return fake.runJobArgsForCall[i].id
+}
+
+func (fake *FakeJobService) RunJobReturns(result1 error) {
+	fake.RunJobStub = nil
+	fake.runJobReturns = struct {
 		result1 error
 	}{result1}
 }

@@ -43,6 +43,9 @@ var _ = Describe("Handlers", func() {
 		server.Close()
 	})
 
+	// TODO is this covered by integration tests?
+	PDescribe("listing jobs", func() {})
+
 	Describe("creating a job", func() {
 		It("saves the job", func() {
 			build := jobs.Build{
@@ -66,7 +69,7 @@ var _ = Describe("Handlers", func() {
 				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
-				pageobjects.NewCreateJobPage(page).CreateJob("Alice", "bork bork", "user/image:tag", "some-repo.git")
+				pageobjects.NewNewJobPage(page).CreateJob("Alice", "bork bork", "user/image:tag", "some-repo.git")
 
 				Expect(jobService.SaveCallCount()).To(Equal(1))
 			})

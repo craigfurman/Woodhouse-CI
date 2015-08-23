@@ -25,6 +25,23 @@ func NewJobRepository(dbPath string) (*JobRepository, error) {
 	}, nil
 }
 
+func (repo *JobRepository) List() ([]jobs.Job, error) {
+	jobRows, err := repo.db.Query("SELECT * FROM jobs")
+	if err != nil {
+		return []jobs.Job{}, err
+	}
+
+	list := []jobs.Job{}
+	for jobRows.Next() {
+		var job jobs.Job
+		if err := jobRows.Scan(&job.ID, &job.Name, &job.Command, &job.DockerImage, &job.GitRepository); err != nil {
+			return list, err
+		}
+		list = append(list, job)
+	}
+	return list, nil
+}
+
 func (repo *JobRepository) Save(job *jobs.Job) error {
 	job.ID = uuid.New()
 	_, err := repo.db.Exec(

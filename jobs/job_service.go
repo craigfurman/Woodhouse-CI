@@ -24,6 +24,7 @@ type Build struct {
 
 //go:generate counterfeiter -o fake_job_repository/fake_job_repository.go . JobRepository
 type JobRepository interface {
+	List() ([]Job, error)
 	Save(job *Job) error
 	FindById(id string) (Job, error)
 }
@@ -44,6 +45,10 @@ type Service struct {
 	JobRepository   JobRepository
 	Runner          Runner
 	BuildRepository BuildRepository
+}
+
+func (s *Service) ListJobs() ([]Job, error) {
+	return s.JobRepository.List()
 }
 
 func (s *Service) Save(job *Job) error {

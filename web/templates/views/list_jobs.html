@@ -1,4 +1,9 @@
 {{ define "content" }}
 <h2>Jobs</h2>
 <a id="newJob" href="/jobs/new">Create a job</a>
+<ul class="jobs">
+	{{ range $job := . }}
+	<li class="job"><a href="/jobs/{{ $job.ID }}/builds/1">{{ $job.Name }}</a></li>
+	{{ end }}
+</ul>
 {{ end }}

@@ -18,8 +18,9 @@ import (
 
 //go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
 type JobService interface {
-	RunJob(id string) error
+	ListJobs() ([]jobs.Job, error)
 	Save(job *jobs.Job) error
+	RunJob(id string) error
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
 	Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error)
 }
@@ -41,6 +42,7 @@ func New(jobService JobService, templateDir string) *Handler {
 		jobService: jobService,
 	}
 
+	h.HandleFunc("/", h.rootHandler).Methods("GET")
 	h.HandleFunc("/jobs", h.listJobs).Methods("GET")
 	h.HandleFunc("/jobs/new", h.newJob).Methods("GET")
 	h.HandleFunc("/jobs", h.createJob).Methods("POST")
@@ -50,12 +52,20 @@ func New(jobService JobService, templateDir string) *Handler {
 	return h
 }
 
+func (h *Handler) rootHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/jobs", 302)
+}
+
 func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
-	h.renderTemplate("list_jobs", nil, w)
+	if list, err := h.jobService.ListJobs(); err == nil {
+		h.renderTemplate("list_jobs", list, w)
+	} else {
+		h.renderErrPage("listing jobs", err, w, r)
+	}
 }
 
 func (h *Handler) newJob(w http.ResponseWriter, r *http.Request) {
-	h.renderTemplate("create_job", nil, w)
+	h.renderTemplate("new_job", nil, w)
 }
 
 func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {

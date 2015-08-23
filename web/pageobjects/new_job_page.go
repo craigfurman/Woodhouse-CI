@@ -6,15 +6,15 @@ import (
 	. "github.com/sclevine/agouti/matchers"
 )
 
-type CreateJobPage struct {
+type NewJobPage struct {
 	page *agouti.Page
 }
 
-func NewCreateJobPage(page *agouti.Page) *CreateJobPage {
-	return &CreateJobPage{page: page}
+func NewNewJobPage(page *agouti.Page) *NewJobPage {
+	return &NewJobPage{page: page}
 }
 
-func (p *CreateJobPage) CreateJob(name, cmd, dockerImage, gitRepo string) {
+func (p *NewJobPage) CreateJob(name, cmd, dockerImage, gitRepo string) {
 	Expect(p.page.Find("form input#name").Fill(name)).To(Succeed())
 	Expect(p.page.Find("form input#command").Fill(cmd)).To(Succeed())
 	Expect(p.page.Find("form input#dockerImage").Fill(dockerImage)).To(Succeed())

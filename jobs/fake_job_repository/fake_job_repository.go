@@ -8,6 +8,13 @@ import (
 )
 
 type FakeJobRepository struct {
+	ListStub        func() ([]jobs.Job, error)
+	listMutex       sync.RWMutex
+	listArgsForCall []struct{}
+	listReturns     struct {
+		result1 []jobs.Job
+		result2 error
+	}
 	SaveStub        func(job *jobs.Job) error
 	saveMutex       sync.RWMutex
 	saveArgsForCall []struct {
@@ -25,6 +32,31 @@ type FakeJobRepository struct {
 		result1 jobs.Job
 		result2 error
 	}
+}
+
+func (fake *FakeJobRepository) List() ([]jobs.Job, error) {
+	fake.listMutex.Lock()
+	fake.listArgsForCall = append(fake.listArgsForCall, struct{}{})
+	fake.listMutex.Unlock()
+	if fake.ListStub != nil {
+		return fake.ListStub()
+	} else {
+		return fake.listReturns.result1, fake.listReturns.result2
+	}
+}
+
+func (fake *FakeJobRepository) ListCallCount() int {
+	fake.listMutex.RLock()
+	defer fake.listMutex.RUnlock()
+	return len(fake.listArgsForCall)
+}
+
+func (fake *FakeJobRepository) ListReturns(result1 []jobs.Job, result2 error) {
+	fake.ListStub = nil
+	fake.listReturns = struct {
+		result1 []jobs.Job
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeJobRepository) Save(job *jobs.Job) error {

@@ -59,6 +59,23 @@ var _ = Describe("JobRepository", func() {
 			Expect(savedJob.ID).ToNot(BeEmpty())
 		})
 
+		Describe("listing jobs", func() {
+			It("lists jobs", func() {
+				list, err := repo.List()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(list).To(ConsistOf(jobs.Job{
+					ID:            savedJob.ID,
+					Name:          "myFancyJob",
+					Command:       "my CI script",
+					DockerImage:   "someUser/someName:someTag",
+					GitRepository: "sweet potato",
+				}))
+			})
+
+			// TODO how to simulate error here?
+			PContext("when listing jobs fails", func() {})
+		})
+
 		Describe("retrieving the job", func() {
 			It("retrieves the job", func() {
 				job, err := repo.FindById(savedJob.ID)

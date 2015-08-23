@@ -6,16 +6,16 @@ import (
 	. "github.com/sclevine/agouti/matchers"
 )
 
-type JobsPage struct {
+type ListJobsPage struct {
 	page *agouti.Page
 }
 
-func NewJobsPage(page *agouti.Page) *JobsPage {
-	return &JobsPage{page: page}
+func NewListJobsPage(page *agouti.Page) *ListJobsPage {
+	return &ListJobsPage{page: page}
 }
 
-func (p *JobsPage) GoToCreateNewJob() *CreateJobPage {
+func (p *ListJobsPage) GoToCreateNewJob() *NewJobPage {
 	Expect(p.page.Find("a#newJob").Click()).To(Succeed())
 	Eventually(p.page.Find("form input#name")).Should(BeFound())
-	return NewCreateJobPage(p.page)
+	return NewNewJobPage(p.page)
 }

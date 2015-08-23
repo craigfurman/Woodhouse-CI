@@ -39,7 +39,7 @@ var _ = Describe("Creating a job", func() {
 			})
 
 			By("creating the new job using the specified docker image", func() {
-				pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
+				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
 			})
 
 			By("streaming the output from the job", func() {
@@ -64,7 +64,7 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 			})
 
 			By("mounting the repository inside the container", func() {
-				pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat LICENSE", "busybox", repo)
+				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat LICENSE", "busybox", repo)
 			})
 
 			By("streaming the output from the job", func() {
@@ -84,7 +84,7 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 				jobSubmitted := make(chan bool)
 				go func(c chan<- bool) {
 					defer GinkgoRecover()
-					pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("Bob", `sh -c "echo start && sleep 2 && echo finish"`, "busybox", "")
+					pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", `sh -c "echo start && sleep 2 && echo finish"`, "busybox", "")
 					c <- true
 				}(jobSubmitted)
 				select {
@@ -113,7 +113,7 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 			})
 
 			By("creating the new job", func() {
-				pageobjects.NewJobsPage(page).GoToCreateNewJob().CreateJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`, "busybox", "")
+				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`, "busybox", "")
 			})
 
 			By("streaming the output from the job", func() {
