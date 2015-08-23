@@ -29,11 +29,11 @@ var _ = Describe("BuildRepository", func() {
 			buildNumber    int
 			outputDest     io.WriteCloser
 			exitStatusChan chan uint32
-			err            error
+			createErr      error
 		)
 
 		JustBeforeEach(func() {
-			buildNumber, outputDest, exitStatusChan, err = repo.Create(jobId)
+			buildNumber, outputDest, exitStatusChan, createErr = repo.Create(jobId)
 		})
 
 		Context("when the builds directory already exists", func() {
@@ -49,7 +49,7 @@ var _ = Describe("BuildRepository", func() {
 			})
 
 			It("does not error", func() {
-				Expect(err).NotTo(HaveOccurred())
+				Expect(createErr).NotTo(HaveOccurred())
 			})
 
 			Context("when output and exitStatus are written", func() {
@@ -254,7 +254,23 @@ var _ = Describe("BuildRepository", func() {
 		})
 
 		Context("when the builds directory does not already exist", func() {
+			BeforeEach(func() {
+				tmpDir, err := ioutil.TempDir("", "build-repo-unit-tests")
+				Expect(err).NotTo(HaveOccurred())
+				buildsDir = filepath.Join(tmpDir, "i-dont-exist-yet")
+				repo = &builds.Repository{BuildsDir: buildsDir}
+			})
+
+			AfterEach(func() {
+				Expect(os.RemoveAll(buildsDir)).To(Succeed())
+			})
+
 			It("does not error", func() {
+				Expect(createErr).NotTo(HaveOccurred())
+			})
+
+			It("creates it", func() {
+				_, err := os.Stat(buildsDir)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
