@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 
 	"github.com/craigfurman/woodhouse-ci/builds"
 	"github.com/craigfurman/woodhouse-ci/db"
@@ -20,8 +19,6 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	must(err)
 	distBase := filepath.Join(dir, "..")
