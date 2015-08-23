@@ -27,96 +27,104 @@ type JobService interface {
 type Handler struct {
 	*mux.Router
 
-	templates map[string]*template.Template
+	jobService JobService
+	templates  map[string]*template.Template
 }
 
 func New(jobService JobService, templateDir string) *Handler {
 	templates := parseTemplates(templateDir)
 	router := mux.NewRouter()
 
-	handler := &Handler{
-		Router:    router,
-		templates: templates,
+	h := &Handler{
+		Router:     router,
+		templates:  templates,
+		jobService: jobService,
 	}
 
-	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		handler.renderTemplate("list_jobs", nil, w)
-	}).Methods("GET")
+	h.HandleFunc("/jobs", h.listJobs).Methods("GET")
+	h.HandleFunc("/jobs/new", h.newJob).Methods("GET")
+	h.HandleFunc("/jobs", h.createJob).Methods("POST")
+	h.HandleFunc("/jobs/{jobId}/builds/{buildId}", h.showBuild).Methods("GET")
+	h.HandleFunc("/jobs/{jobId}/builds/{buildId}/output", h.streamBuild).Methods("GET")
 
-	router.HandleFunc("/jobs/new", func(w http.ResponseWriter, r *http.Request) {
-		handler.renderTemplate("create_job", nil, w)
-	}).Methods("GET")
+	return h
+}
 
-	router.HandleFunc("/jobs", func(w http.ResponseWriter, r *http.Request) {
-		job := jobs.Job{
-			Name:          r.FormValue("name"),
-			Command:       r.FormValue("command"),
-			DockerImage:   r.FormValue("dockerImage"),
-			GitRepository: r.FormValue("gitRepo"),
-		}
+func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
+	h.renderTemplate("list_jobs", nil, w)
+}
 
-		if err := jobService.Save(&job); err != nil {
-			handler.renderErrPage("saving job", err, w, r)
-			return
-		}
+func (h *Handler) newJob(w http.ResponseWriter, r *http.Request) {
+	h.renderTemplate("create_job", nil, w)
+}
 
-		if err := jobService.RunJob(job.ID); err == nil {
-			http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/1", job.ID), 302)
-		} else {
-			handler.renderErrPage("running job", err, w, r)
-		}
-	}).Methods("POST")
+func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
+	job := jobs.Job{
+		Name:          r.FormValue("name"),
+		Command:       r.FormValue("command"),
+		DockerImage:   r.FormValue("dockerImage"),
+		GitRepository: r.FormValue("gitRepo"),
+	}
 
-	router.HandleFunc("/jobs/{jobId}/builds/{buildId}", func(w http.ResponseWriter, r *http.Request) {
-		jobId := mux.Vars(r)["jobId"]
-		buildIdStr := mux.Vars(r)["buildId"]
-		buildId, err := strconv.Atoi(buildIdStr)
-		must(err)
-		if runningJob, err := jobService.FindBuild(jobId, buildId); err == nil {
-			buildView := helpers.PresentableJob(runningJob)
-			buildView.BuildNumber = buildIdStr
-			buildView.BytesAlreadyReceived = len(runningJob.Output)
-			handler.renderTemplate("job_output", buildView, w)
-		} else {
-			handler.renderErrPage("retrieving job", err, w, r)
-		}
-	}).Methods("GET")
+	if err := h.jobService.Save(&job); err != nil {
+		h.renderErrPage("saving job", err, w, r)
+		return
+	}
 
-	router.HandleFunc("/jobs/{jobId}/builds/{buildId}/output", func(w http.ResponseWriter, r *http.Request) {
-		jobId := mux.Vars(r)["jobId"]
-		buildId, err := strconv.Atoi(mux.Vars(r)["buildId"])
-		must(err)
+	if err := h.jobService.RunJob(job.ID); err == nil {
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/1", job.ID), 302)
+	} else {
+		h.renderErrPage("running job", err, w, r)
+	}
+}
 
-		must(r.ParseForm())
-		streamOffset, err := strconv.Atoi(r.Form.Get("offset"))
-		must(err)
+func (h *Handler) showBuild(w http.ResponseWriter, r *http.Request) {
+	jobId := mux.Vars(r)["jobId"]
+	buildIdStr := mux.Vars(r)["buildId"]
+	buildId, err := strconv.Atoi(buildIdStr)
+	must(err)
+	if runningJob, err := h.jobService.FindBuild(jobId, buildId); err == nil {
+		buildView := helpers.PresentableJob(runningJob)
+		buildView.BuildNumber = buildIdStr
+		buildView.BytesAlreadyReceived = len(runningJob.Output)
+		h.renderTemplate("job_output", buildView, w)
+	} else {
+		h.renderErrPage("retrieving job", err, w, r)
+	}
+}
 
-		streamer, err := jobService.Stream(jobId, buildId, int64(streamOffset))
-		must(err)
+func (h *Handler) streamBuild(w http.ResponseWriter, r *http.Request) {
+	jobId := mux.Vars(r)["jobId"]
+	buildId, err := strconv.Atoi(mux.Vars(r)["buildId"])
+	must(err)
 
-		w.Header().Set("Content-Type", "text/event-stream\n\n")
+	must(r.ParseForm())
+	streamOffset, err := strconv.Atoi(r.Form.Get("offset"))
+	must(err)
 
-		for {
-			bytes, done := streamer.Next()
-			_, err = w.Write([]byte(eventMessage("output", helpers.SanitisedHTML(string(bytes)))))
-			must(err)
+	streamer, err := h.jobService.Stream(jobId, buildId, int64(streamOffset))
+	must(err)
 
-			w.(http.Flusher).Flush()
+	w.Header().Set("Content-Type", "text/event-stream\n\n")
 
-			if done {
-				break
-			}
-		}
-
-		must(streamer.Close())
-
-		build, err := jobService.FindBuild(jobId, buildId)
+	for {
+		bytes, done := streamer.Next()
+		_, err = w.Write([]byte(eventMessage("output", helpers.SanitisedHTML(string(bytes)))))
 		must(err)
 
-		w.Write([]byte(eventMessage("end", helpers.Message(build))))
-	}).Methods("GET")
+		w.(http.Flusher).Flush()
 
-	return handler
+		if done {
+			break
+		}
+	}
+
+	must(streamer.Close())
+
+	build, err := h.jobService.FindBuild(jobId, buildId)
+	must(err)
+
+	w.Write([]byte(eventMessage("end", helpers.Message(build))))
 }
 
 func eventMessage(eventName, data string) string {
@@ -127,10 +135,10 @@ type Error struct {
 	Error string
 }
 
-func (handler Handler) renderErrPage(message string, err error, w http.ResponseWriter, r *http.Request) {
+func (h Handler) renderErrPage(message string, err error, w http.ResponseWriter, r *http.Request) {
 	log.Printf("Error: %s: %v", message, err)
 	w.WriteHeader(500)
-	handler.renderTemplate("error", Error{Error: err.Error()}, w)
+	h.renderTemplate("error", Error{Error: err.Error()}, w)
 }
 
 func (h Handler) renderTemplate(name string, pageObject interface{}, w http.ResponseWriter) {
