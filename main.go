@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/craigfurman/woodhouse-ci/builds"
@@ -50,6 +52,15 @@ func main() {
 
 	jobRepo, err := db.NewJobRepository(filepath.Join(dbDir, "store.db"))
 	must(err)
+
+	// Only Interrupt handled, as this is available on all major platforms and is the most common way of stopping Woodhouse-CI
+	exitChan := make(chan os.Signal)
+	signal.Notify(exitChan, os.Interrupt)
+	go func(c <-chan os.Signal) {
+		log.Printf("Caught signal %s. Closing database connections. Goodbye!\n", <-c)
+		must(jobRepo.Close())
+		os.Exit(0)
+	}(exitChan)
 
 	handler := web.New(&jobs.Service{
 		JobRepository: jobRepo,
