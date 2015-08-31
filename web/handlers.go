@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/web/helpers"
 
@@ -22,7 +22,7 @@ type JobService interface {
 	Save(job *jobs.Job) error
 	RunJob(id string) error
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
-	Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error)
+	Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error)
 }
 
 type Handler struct {

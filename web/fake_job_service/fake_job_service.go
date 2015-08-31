@@ -4,7 +4,7 @@ package fake_job_service
 import (
 	"sync"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 	"github.com/craigfurman/woodhouse-ci/web"
 )
@@ -43,7 +43,7 @@ type FakeJobService struct {
 		result1 jobs.Build
 		result2 error
 	}
-	StreamStub        func(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error)
+	StreamStub        func(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error)
 	streamMutex       sync.RWMutex
 	streamArgsForCall []struct {
 		jobId        string
@@ -51,7 +51,7 @@ type FakeJobService struct {
 		streamOffset int64
 	}
 	streamReturns struct {
-		result1 *blockingio.BlockingReader
+		result1 *chunkedio.ChunkedReader
 		result2 error
 	}
 }
@@ -179,7 +179,7 @@ func (fake *FakeJobService) FindBuildReturns(result1 jobs.Build, result2 error) 
 	}{result1, result2}
 }
 
-func (fake *FakeJobService) Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error) {
+func (fake *FakeJobService) Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error) {
 	fake.streamMutex.Lock()
 	fake.streamArgsForCall = append(fake.streamArgsForCall, struct {
 		jobId        string
@@ -206,10 +206,10 @@ func (fake *FakeJobService) StreamArgsForCall(i int) (string, int, int64) {
 	return fake.streamArgsForCall[i].jobId, fake.streamArgsForCall[i].buildNumber, fake.streamArgsForCall[i].streamOffset
 }
 
-func (fake *FakeJobService) StreamReturns(result1 *blockingio.BlockingReader, result2 error) {
+func (fake *FakeJobService) StreamReturns(result1 *chunkedio.ChunkedReader, result2 error) {
 	fake.StreamStub = nil
 	fake.streamReturns = struct {
-		result1 *blockingio.BlockingReader
+		result1 *chunkedio.ChunkedReader
 		result2 error
 	}{result1, result2}
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 )
 
 type Job struct {
@@ -33,7 +33,7 @@ type JobRepository interface {
 type BuildRepository interface {
 	Create(jobId string) (int, io.WriteCloser, chan uint32, error)
 	Find(jobId string, buildNumber int) (Build, error)
-	Stream(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error)
+	Stream(jobId string, buildNumber int, startAtByte int64) (*chunkedio.ChunkedReader, error)
 }
 
 //go:generate counterfeiter -o fake_job_runner/fake_job_runner.go . Runner
@@ -86,6 +86,6 @@ func (s *Service) FindBuild(jobId string, buildNumber int) (Build, error) {
 	return build, nil
 }
 
-func (s *Service) Stream(jobId string, buildNumber int, streamOffset int64) (*blockingio.BlockingReader, error) {
+func (s *Service) Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error) {
 	return s.BuildRepository.Stream(jobId, buildNumber, streamOffset)
 }

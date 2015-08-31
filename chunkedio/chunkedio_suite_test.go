@@ -1,4 +1,4 @@
-package blockingio_test
+package chunkedio_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestBlockingio(t *testing.T) {
+func Testchunkedio(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Blockingio Suite")
+	RunSpecs(t, "chunkedio Suite")
 }

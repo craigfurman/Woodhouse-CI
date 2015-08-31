@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
 	"github.com/craigfurman/woodhouse-ci/builds"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
 
 	. "github.com/onsi/ginkgo"
@@ -140,7 +140,7 @@ var _ = Describe("BuildRepository", func() {
 
 				Describe("streaming output from the build", func() {
 					var (
-						streamer *blockingio.BlockingReader
+						streamer *chunkedio.ChunkedReader
 						sErr     error
 
 						jobIdToStream       string

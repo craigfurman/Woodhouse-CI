@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 )
 
-func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*blockingio.BlockingReader, error) {
+func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*chunkedio.ChunkedReader, error) {
 	outputFile, err := os.Open(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-output.txt", buildNumber)))
 	if err != nil {
 		return nil, fmt.Errorf("streaming output from job: %s, build: %d. Cause: %v", jobId, buildNumber, err)
@@ -23,7 +23,7 @@ func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*
 		return !os.IsNotExist(err)
 	}
 
-	return &blockingio.BlockingReader{
+	return &chunkedio.ChunkedReader{
 		Output:      outputFile,
 		DoneWriting: doneWriting,
 		Buffer:      make([]byte, 4096),

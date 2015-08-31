@@ -1,4 +1,4 @@
-package blockingio
+package chunkedio
 
 import (
 	"io"
@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-type BlockingReader struct {
+type ChunkedReader struct {
 	Output      io.ReadCloser
 	DoneWriting func() bool
 	Buffer      []byte
 }
 
-func (r *BlockingReader) Next() ([]byte, bool) {
+func (r *ChunkedReader) Next() ([]byte, bool) {
 	var err error
 	bytesRead := 0
 	done := false
@@ -32,6 +32,6 @@ func (r *BlockingReader) Next() ([]byte, bool) {
 	return r.Buffer[:bytesRead], done
 }
 
-func (r *BlockingReader) Close() error {
+func (r *ChunkedReader) Close() error {
 	return r.Output.Close()
 }

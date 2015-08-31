@@ -1,19 +1,19 @@
-package blockingio_test
+package chunkedio_test
 
 import (
 	"bytes"
 	"io"
 	"time"
 
-	"github.com/craigfurman/woodhouse-ci/blockingio"
+	"github.com/craigfurman/woodhouse-ci/chunkedio"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BlockingReader", func() {
+var _ = Describe("ChunkedReader", func() {
 	var (
-		br     *blockingio.BlockingReader
+		br     *chunkedio.ChunkedReader
 		writer *io.PipeWriter
 
 		done bool
@@ -22,7 +22,7 @@ var _ = Describe("BlockingReader", func() {
 	BeforeEach(func() {
 		var reader *io.PipeReader
 		reader, writer = io.Pipe()
-		br = &blockingio.BlockingReader{
+		br = &chunkedio.ChunkedReader{
 			Output:      reader,
 			DoneWriting: func() bool { return done },
 			Buffer:      make([]byte, 1024),
