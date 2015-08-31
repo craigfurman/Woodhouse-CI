@@ -33,13 +33,10 @@ var _ = Describe("Creating a job", func() {
 	})
 
 	It("creates and runs the new job", func() {
-		By("navigating to the jobs page", func() {
-			Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
-			Eventually(page.Find("a#newJob")).Should(BeFound())
-		})
-
 		By("creating the new job using the specified docker image", func() {
-			pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
+			pageobjects.NewListJobsPage(page).Visit().
+				GoToCreateNewJob().
+				CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
 		})
 
 		By("streaming the output from the job", func() {
@@ -57,16 +54,14 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 
 	Context("when 2 builds are scheduled for a job", func() {
 		It("preserves build history", func() {
-			By("navigating to the jobs page", func() {
-				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
-				Eventually(page.Find("a#newJob")).Should(BeFound())
-			})
-
 			var showBuildPage *pageobjects.ShowBuildPage
 			By("creating the new job", func() {
-				showBuildPage = pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("busyJob", "echo hello", "busybox", "")
+				showBuildPage = pageobjects.NewListJobsPage(page).Visit().
+					GoToCreateNewJob().
+					CreateJob("busyJob", "echo hello", "busybox", "")
 			})
 
+			var latestBuildUrl string
 			By("scheduling another build", func() {
 				oldUrl, err := page.URL()
 				Expect(err).NotTo(HaveOccurred())
@@ -76,21 +71,23 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 				parts := strings.Split(oldUrl, "/")
 				parts = parts[0 : len(parts)-1]
 				parts = append(parts, "2")
-				newUrl := strings.Join(parts, "/")
-				Eventually(page).Should(HaveURL(newUrl))
+				latestBuildUrl = strings.Join(parts, "/")
+				Eventually(page).Should(HaveURL(latestBuildUrl))
+			})
+
+			By("linking to the latest build on the list jobs page", func() {
+				pageobjects.NewListJobsPage(page).Visit().GoToBuild("busyJob")
+				Eventually(page).Should(HaveURL(latestBuildUrl))
 			})
 		})
 	})
 
 	Describe("specifying a git repository for the job", func() {
 		It("makes the repository available at the specified relative path", func() {
-			By("navigating to the jobs page", func() {
-				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
-				Eventually(page.Find("a#newJob")).Should(BeFound())
-			})
-
 			By("mounting the repository inside the container", func() {
-				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat LICENSE", "busybox", repo)
+				pageobjects.NewListJobsPage(page).Visit().
+					GoToCreateNewJob().
+					CreateJob("Bob", "cat LICENSE", "busybox", repo)
 			})
 
 			By("streaming the output from the job", func() {
@@ -101,16 +98,13 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 
 	Context("when the job takes a long time to complete", func() {
 		It("starts the job and streams the output", func() {
-			By("navigating to the jobs page", func() {
-				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
-				Eventually(page.Find("a#newJob")).Should(BeFound())
-			})
-
 			By("creating the new job", func() {
 				jobSubmitted := make(chan bool)
 				go func(c chan<- bool) {
 					defer GinkgoRecover()
-					pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", `sh -c "echo start && sleep 2 && echo finish"`, "busybox", "")
+					pageobjects.NewListJobsPage(page).Visit().
+						GoToCreateNewJob().
+						CreateJob("Bob", `sh -c "echo start && sleep 2 && echo finish"`, "busybox", "")
 					c <- true
 				}(jobSubmitted)
 				select {
@@ -133,13 +127,10 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 
 	Context("when the job fails", func() {
 		It("creates and runs the new job", func() {
-			By("navigating to the jobs page", func() {
-				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
-				Eventually(page.Find("a#newJob")).Should(BeFound())
-			})
-
 			By("creating the new job", func() {
-				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`, "busybox", "")
+				pageobjects.NewListJobsPage(page).Visit().
+					GoToCreateNewJob().
+					CreateJob("FailedJob", `sh -c "echo hi >&2 && exit 42"`, "busybox", "")
 			})
 
 			By("streaming the output from the job", func() {

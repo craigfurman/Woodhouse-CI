@@ -31,6 +31,15 @@ type FakeBuildRepository struct {
 		result1 jobs.Build
 		result2 error
 	}
+	HighestBuildStub        func(jobId string) (int, error)
+	highestBuildMutex       sync.RWMutex
+	highestBuildArgsForCall []struct {
+		jobId string
+	}
+	highestBuildReturns struct {
+		result1 int
+		result2 error
+	}
 	StreamStub        func(jobId string, buildNumber int, startAtByte int64) (*chunkedio.ChunkedReader, error)
 	streamMutex       sync.RWMutex
 	streamArgsForCall []struct {
@@ -109,6 +118,39 @@ func (fake *FakeBuildRepository) FindReturns(result1 jobs.Build, result2 error) 
 	fake.FindStub = nil
 	fake.findReturns = struct {
 		result1 jobs.Build
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBuildRepository) HighestBuild(jobId string) (int, error) {
+	fake.highestBuildMutex.Lock()
+	fake.highestBuildArgsForCall = append(fake.highestBuildArgsForCall, struct {
+		jobId string
+	}{jobId})
+	fake.highestBuildMutex.Unlock()
+	if fake.HighestBuildStub != nil {
+		return fake.HighestBuildStub(jobId)
+	} else {
+		return fake.highestBuildReturns.result1, fake.highestBuildReturns.result2
+	}
+}
+
+func (fake *FakeBuildRepository) HighestBuildCallCount() int {
+	fake.highestBuildMutex.RLock()
+	defer fake.highestBuildMutex.RUnlock()
+	return len(fake.highestBuildArgsForCall)
+}
+
+func (fake *FakeBuildRepository) HighestBuildArgsForCall(i int) string {
+	fake.highestBuildMutex.RLock()
+	defer fake.highestBuildMutex.RUnlock()
+	return fake.highestBuildArgsForCall[i].jobId
+}
+
+func (fake *FakeBuildRepository) HighestBuildReturns(result1 int, result2 error) {
+	fake.HighestBuildStub = nil
+	fake.highestBuildReturns = struct {
+		result1 int
 		result2 error
 	}{result1, result2}
 }

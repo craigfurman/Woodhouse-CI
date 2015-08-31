@@ -33,6 +33,7 @@ type JobRepository interface {
 type BuildRepository interface {
 	Create(jobId string) (int, io.WriteCloser, chan uint32, error)
 	Find(jobId string, buildNumber int) (Build, error)
+	HighestBuild(jobId string) (int, error)
 	Stream(jobId string, buildNumber int, startAtByte int64) (*chunkedio.ChunkedReader, error)
 }
 
@@ -84,6 +85,10 @@ func (s *Service) FindBuild(jobId string, buildNumber int) (Build, error) {
 	}
 	build.Job = job
 	return build, nil
+}
+
+func (s *Service) HighestBuild(jobId string) (int, error) {
+	return s.BuildRepository.HighestBuild(jobId)
 }
 
 func (s *Service) Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error) {

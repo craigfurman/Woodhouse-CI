@@ -22,6 +22,7 @@ type JobService interface {
 	Save(job *jobs.Job) error
 	RunJob(id string) (int, error)
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
+	HighestBuild(jobId string) (int, error)
 	Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error)
 }
 
@@ -101,8 +102,17 @@ func (h *Handler) createBuild(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) showBuild(w http.ResponseWriter, r *http.Request) {
 	jobId := mux.Vars(r)["jobId"]
 	buildIdStr := mux.Vars(r)["buildId"]
+
+	if buildIdStr == "latest" {
+		buildNumber, err := h.jobService.HighestBuild(jobId)
+		must(err)
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/%d", jobId, buildNumber), 302)
+		return
+	}
+
 	buildId, err := strconv.Atoi(buildIdStr)
 	must(err)
+
 	if runningJob, err := h.jobService.FindBuild(jobId, buildId); err == nil {
 		buildView := helpers.PresentableJob(runningJob)
 		buildView.BuildNumber = buildIdStr

@@ -19,5 +19,5 @@ func (p *ShowBuildPage) ScheduleNewBuild() *ShowBuildPage {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(p.page.Find("#startNewBuild").Click()).To(Succeed())
 	Eventually(p.page).ShouldNot(HaveURL(oldUrl))
-	return NewShowBuildPage(p.page)
+	return p
 }

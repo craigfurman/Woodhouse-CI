@@ -38,7 +38,13 @@ func (r *Repository) Create(jobId string) (int, io.WriteCloser, chan uint32, err
 		return errs(fmt.Errorf("creating builds directory for job %s: %v", jobId, err))
 	}
 
-	buildNumber := r.highestBuild(jobId) + 1
+	highestBuild, err := r.HighestBuild(jobId)
+	buildNumber := highestBuild + 1
+
+	if err != nil {
+		return errs(fmt.Errorf("getting highest build: %v", err))
+	}
+
 	f, err := os.Create(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-output.txt", buildNumber)))
 	if err != nil {
 		return errs(fmt.Errorf("creating output file: %v", err))
@@ -50,10 +56,10 @@ func (r *Repository) Create(jobId string) (int, io.WriteCloser, chan uint32, err
 	return buildNumber, f, status, nil
 }
 
-func (r *Repository) highestBuild(jobId string) int {
+func (r *Repository) HighestBuild(jobId string) (int, error) {
 	files, err := ioutil.ReadDir(filepath.Join(r.BuildsDir, jobId))
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
 	max := 0
@@ -61,7 +67,7 @@ func (r *Repository) highestBuild(jobId string) int {
 		if strings.Contains(f.Name(), "output") {
 			latest, err := strconv.Atoi(strings.TrimRight(f.Name(), "-output.txt"))
 			if err != nil {
-				panic(err)
+				return 0, err
 			}
 
 			if latest > max {
@@ -69,7 +75,7 @@ func (r *Repository) highestBuild(jobId string) int {
 			}
 		}
 	}
-	return max
+	return max, nil
 }
 
 func (r *Repository) recordStatus(jobId string, buildNumber int, c <-chan uint32) {
