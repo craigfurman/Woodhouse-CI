@@ -65,7 +65,7 @@ var _ = Describe("Handlers", func() {
 					return nil
 				}
 
-				jobService.RunJobReturns(nil)
+				jobService.RunJobReturns(4, nil)
 				jobService.FindBuildReturns(build, nil)
 
 				Expect(page.Navigate(fmt.Sprintf("%s/jobs/new", server.URL))).To(Succeed())
@@ -75,7 +75,7 @@ var _ = Describe("Handlers", func() {
 			})
 
 			By("redirecting to the build output page", func() {
-				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/some-id/builds/1", server.URL)))
+				Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/some-id/builds/4", server.URL)))
 			})
 
 			By("running job", func() {
@@ -88,7 +88,7 @@ var _ = Describe("Handlers", func() {
 				Expect(jobService.FindBuildCallCount()).To(Equal(1))
 				jobId, buildNumber := jobService.FindBuildArgsForCall(0)
 				Expect(jobId).To(Equal("some-id"))
-				Expect(buildNumber).To(Equal(1))
+				Expect(buildNumber).To(Equal(4))
 			})
 		})
 

@@ -63,11 +63,9 @@ func main() {
 	}(exitChan)
 
 	handler := web.New(&jobs.Service{
-		JobRepository: jobRepo,
-		Runner:        runner.NewDockerRunner(vcs.GitCloner{}),
-		BuildRepository: &builds.Repository{
-			BuildsDir: *buildsDir,
-		},
+		JobRepository:   jobRepo,
+		Runner:          runner.NewDockerRunner(vcs.GitCloner{}),
+		BuildRepository: builds.NewRepository(*buildsDir),
 	}, *templateDir)
 
 	server := negroni.New(negroni.NewRecovery(), negroni.NewLogger(), negroni.NewStatic(http.Dir(*assetsDir)))

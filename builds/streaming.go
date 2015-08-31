@@ -19,7 +19,7 @@ func (r *Repository) Stream(jobId string, buildNumber int, startAtByte int64) (*
 	}
 
 	doneWriting := func() bool {
-		_, err := os.Stat(filepath.Join(r.BuildsDir, jobId, "1-status.txt"))
+		_, err := os.Stat(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-status.txt", buildNumber)))
 		return !os.IsNotExist(err)
 	}
 

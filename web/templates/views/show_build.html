@@ -1,8 +1,10 @@
 {{ define "content" }}
 <h2 id="jobTitle">{{ .Name }}</h2>
 <h3 id="jobResult">{{ .ExitMessage }}</h3>
+<form action="/jobs/{{ .ID }}/builds" method="POST">
+	<button id="startNewBuild" class="btn btn-default" type="submit">Start new build</button>
+</form>
 <pre id="jobOutput">{{ .Output }}</pre>
-
 <script type="text/javascript" src="/javascript/vendor/jquery/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
 	window.job = {

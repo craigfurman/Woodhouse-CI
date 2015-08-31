@@ -8,15 +8,28 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
 type Repository struct {
+	*sync.Mutex
 	BuildsDir string
 }
 
+func NewRepository(buildsDir string) *Repository {
+	return &Repository{
+		BuildsDir: buildsDir,
+		Mutex:     new(sync.Mutex),
+	}
+}
+
 func (r *Repository) Create(jobId string) (int, io.WriteCloser, chan uint32, error) {
+	r.Lock()
+	defer r.Unlock()
+
 	errs := func(err error) (int, io.WriteCloser, chan uint32, error) {
 		return -1, nil, nil, err
 	}
@@ -25,20 +38,43 @@ func (r *Repository) Create(jobId string) (int, io.WriteCloser, chan uint32, err
 		return errs(fmt.Errorf("creating builds directory for job %s: %v", jobId, err))
 	}
 
-	f, err := os.Create(filepath.Join(r.BuildsDir, jobId, "1-output.txt"))
+	buildNumber := r.highestBuild(jobId) + 1
+	f, err := os.Create(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-output.txt", buildNumber)))
 	if err != nil {
 		return errs(fmt.Errorf("creating output file: %v", err))
 	}
 
 	status := make(chan uint32, 1)
-	go r.recordStatus(jobId, status)
+	go r.recordStatus(jobId, buildNumber, status)
 
-	return 1, f, status, nil
+	return buildNumber, f, status, nil
 }
 
-func (r *Repository) recordStatus(jobId string, c <-chan uint32) {
+func (r *Repository) highestBuild(jobId string) int {
+	files, err := ioutil.ReadDir(filepath.Join(r.BuildsDir, jobId))
+	if err != nil {
+		panic(err)
+	}
+
+	max := 0
+	for _, f := range files {
+		if strings.Contains(f.Name(), "output") {
+			latest, err := strconv.Atoi(strings.TrimRight(f.Name(), "-output.txt"))
+			if err != nil {
+				panic(err)
+			}
+
+			if latest > max {
+				max = latest
+			}
+		}
+	}
+	return max
+}
+
+func (r *Repository) recordStatus(jobId string, buildNumber int, c <-chan uint32) {
 	exitCode := <-c
-	f, err := os.Create(filepath.Join(r.BuildsDir, jobId, "1-status.txt"))
+	f, err := os.Create(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-status.txt", buildNumber)))
 	if err != nil {
 		log.Printf("error creating status file: %v", err)
 	}
@@ -56,12 +92,12 @@ func (r *Repository) Find(jobId string, buildNumber int) (jobs.Build, error) {
 		return jobs.Build{}, fmt.Errorf("no builds found for job %s", jobId)
 	}
 
-	out, err := ioutil.ReadFile(filepath.Join(r.BuildsDir, jobId, "1-output.txt"))
+	out, err := ioutil.ReadFile(filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-output.txt", buildNumber)))
 	if err != nil {
 		return jobs.Build{}, fmt.Errorf("reading output file for job %s. Cause: %v", jobId, err)
 	}
 
-	finished, exitStatus, err := r.getBuildExitStatus(jobId)
+	finished, exitStatus, err := r.getBuildExitStatus(jobId, buildNumber)
 	if err != nil {
 		return jobs.Build{}, err
 	}
@@ -73,8 +109,8 @@ func (r *Repository) Find(jobId string, buildNumber int) (jobs.Build, error) {
 	}, nil
 }
 
-func (r *Repository) getBuildExitStatus(jobId string) (bool, uint32, error) {
-	statusFile := filepath.Join(r.BuildsDir, jobId, "1-status.txt")
+func (r *Repository) getBuildExitStatus(jobId string, buildNumber int) (bool, uint32, error) {
+	statusFile := filepath.Join(r.BuildsDir, jobId, fmt.Sprintf("%d-status.txt", buildNumber))
 	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
 		return false, 0, nil
 	}

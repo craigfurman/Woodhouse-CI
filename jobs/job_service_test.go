@@ -79,7 +79,9 @@ var _ = Describe("Service", func() {
 					c <- string(output)
 				}(cmdOut)
 
-				Expect(service.RunJob("some-id")).To(Succeed())
+				buildNumber, err := service.RunJob("some-id")
+				Expect(buildNumber).To(Equal(4))
+				Expect(err).ToNot(HaveOccurred())
 				Expect(runner.RunCallCount()).To(Equal(1))
 
 				Expect(<-cmdOut).To(Equal("build output!"))
@@ -93,7 +95,7 @@ var _ = Describe("Service", func() {
 			})
 
 			It("returns error", func() {
-				err := service.RunJob("bad-id")
+				_, err := service.RunJob("bad-id")
 				Expect(err).To(MatchError(ContainSubstring("running job with ID: bad-id")))
 			})
 		})
@@ -104,7 +106,7 @@ var _ = Describe("Service", func() {
 			})
 
 			It("returns error", func() {
-				err := service.RunJob("some-id")
+				_, err := service.RunJob("some-id")
 				Expect(err).To(MatchError(ContainSubstring("starting job with ID: some-id")))
 			})
 		})

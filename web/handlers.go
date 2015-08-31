@@ -20,7 +20,7 @@ import (
 type JobService interface {
 	ListJobs() ([]jobs.Job, error)
 	Save(job *jobs.Job) error
-	RunJob(id string) error
+	RunJob(id string) (int, error)
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
 	Stream(jobId string, buildNumber int, streamOffset int64) (*chunkedio.ChunkedReader, error)
 }
@@ -46,6 +46,7 @@ func New(jobService JobService, templateDir string) *Handler {
 	h.HandleFunc("/jobs", h.listJobs).Methods("GET")
 	h.HandleFunc("/jobs/new", h.newJob).Methods("GET")
 	h.HandleFunc("/jobs", h.createJob).Methods("POST")
+	h.HandleFunc("/jobs/{jobId}/builds", h.createBuild).Methods("POST")
 	h.HandleFunc("/jobs/{jobId}/builds/{buildId}", h.showBuild).Methods("GET")
 	h.HandleFunc("/jobs/{jobId}/builds/{buildId}/output", h.streamBuild).Methods("GET")
 
@@ -81,8 +82,17 @@ func (h *Handler) createJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.jobService.RunJob(job.ID); err == nil {
-		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/1", job.ID), 302)
+	if buildNumber, err := h.jobService.RunJob(job.ID); err == nil {
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/%d", job.ID, buildNumber), 302)
+	} else {
+		h.renderErrPage("running job", err, w, r)
+	}
+}
+
+func (h *Handler) createBuild(w http.ResponseWriter, r *http.Request) {
+	jobID := mux.Vars(r)["jobId"]
+	if buildNumber, err := h.jobService.RunJob(jobID); err == nil {
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/builds/%d", jobID, buildNumber), 302)
 	} else {
 		h.renderErrPage("running job", err, w, r)
 	}
@@ -97,7 +107,7 @@ func (h *Handler) showBuild(w http.ResponseWriter, r *http.Request) {
 		buildView := helpers.PresentableJob(runningJob)
 		buildView.BuildNumber = buildIdStr
 		buildView.BytesAlreadyReceived = len(runningJob.Output)
-		h.renderTemplate("job_output", buildView, w)
+		h.renderTemplate("show_build", buildView, w)
 	} else {
 		h.renderErrPage("retrieving job", err, w, r)
 	}

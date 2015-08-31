@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"strings"
 	"time"
 
 	"github.com/craigfurman/woodhouse-ci/web/pageobjects"
@@ -31,27 +32,52 @@ var _ = Describe("Creating a job", func() {
 		It("runs the job on the host OS", func() {})
 	})
 
-	Context("when there is a docker image specified", func() {
-		It("creates and runs the new job", func() {
+	It("creates and runs the new job", func() {
+		By("navigating to the jobs page", func() {
+			Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
+			Eventually(page.Find("a#newJob")).Should(BeFound())
+		})
+
+		By("creating the new job using the specified docker image", func() {
+			pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
+		})
+
+		By("streaming the output from the job", func() {
+			expected := `.*DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=14.04
+DISTRIB_CODENAME=trusty
+DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
+			Eventually(page.Find("#jobOutput")).Should(MatchText(expected))
+		})
+
+		By("indicating that the job ran successfully", func() {
+			Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+		})
+	})
+
+	Context("when 2 builds are scheduled for a job", func() {
+		It("preserves build history", func() {
 			By("navigating to the jobs page", func() {
 				Expect(page.Navigate("http://localhost:3001/jobs")).To(Succeed())
 				Eventually(page.Find("a#newJob")).Should(BeFound())
 			})
 
-			By("creating the new job using the specified docker image", func() {
-				pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("Bob", "cat /etc/lsb-release", "ubuntu:14.04.3", "")
+			var showBuildPage *pageobjects.ShowBuildPage
+			By("creating the new job", func() {
+				showBuildPage = pageobjects.NewListJobsPage(page).GoToCreateNewJob().CreateJob("busyJob", "echo hello", "busybox", "")
 			})
 
-			By("streaming the output from the job", func() {
-				expected := `.*DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=14.04
-DISTRIB_CODENAME=trusty
-DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
-				Eventually(page.Find("#jobOutput")).Should(MatchText(expected))
-			})
+			By("scheduling another build", func() {
+				oldUrl, err := page.URL()
+				Expect(err).NotTo(HaveOccurred())
 
-			By("indicating that the job ran successfully", func() {
-				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+				showBuildPage.ScheduleNewBuild()
+
+				parts := strings.Split(oldUrl, "/")
+				parts = parts[0 : len(parts)-1]
+				parts = append(parts, "2")
+				newUrl := strings.Join(parts, "/")
+				Eventually(page).Should(HaveURL(newUrl))
 			})
 		})
 	})

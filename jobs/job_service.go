@@ -55,22 +55,22 @@ func (s *Service) Save(job *Job) error {
 	return s.JobRepository.Save(job)
 }
 
-func (s *Service) RunJob(id string) error {
+func (s *Service) RunJob(id string) (int, error) {
 	job, err := s.JobRepository.FindById(id)
 	if err != nil {
-		return fmt.Errorf("running job with ID: %s. Cause: %v", id, err)
+		return 0, fmt.Errorf("running job with ID: %s. Cause: %v", id, err)
 	}
 
-	_, outputDest, exitStatusChan, err := s.BuildRepository.Create(id)
+	buildNumber, outputDest, exitStatusChan, err := s.BuildRepository.Create(id)
 	if err != nil {
-		return fmt.Errorf("creating build data for job with ID: %s. Cause: %v", id, err)
+		return 0, fmt.Errorf("creating build data for job with ID: %s. Cause: %v", id, err)
 	}
 
 	if err := s.Runner.Run(job, outputDest, exitStatusChan); err != nil {
-		return fmt.Errorf("starting job with ID: %s. Cause: %v", id, err)
+		return 0, fmt.Errorf("starting job with ID: %s. Cause: %v", id, err)
 	}
 
-	return nil
+	return buildNumber, nil
 }
 
 func (s *Service) FindBuild(jobId string, buildNumber int) (Build, error) {

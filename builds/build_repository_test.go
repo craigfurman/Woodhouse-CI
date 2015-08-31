@@ -41,7 +41,7 @@ var _ = Describe("BuildRepository", func() {
 				var err error
 				buildsDir, err = ioutil.TempDir("", "builds")
 				Expect(err).NotTo(HaveOccurred())
-				repo = &builds.Repository{BuildsDir: buildsDir}
+				repo = builds.NewRepository(buildsDir)
 			})
 
 			AfterEach(func() {
@@ -50,6 +50,26 @@ var _ = Describe("BuildRepository", func() {
 
 			It("does not error", func() {
 				Expect(createErr).NotTo(HaveOccurred())
+			})
+
+			It("is the first build for this job", func() {
+				Expect(buildNumber).To(Equal(1))
+			})
+
+			Context("when another build for the same job is created", func() {
+				It("is the second build for this job", func() {
+					n, o, c, err := repo.Create(jobId)
+					defer o.Close()
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(n).To(Equal(2))
+
+					c <- 1
+					Eventually(func() error {
+						_, err := os.Stat(filepath.Join(buildsDir, jobId, "2-status.txt"))
+						return err
+					}).ShouldNot(HaveOccurred())
+				})
 			})
 
 			Context("when output and exitStatus are written", func() {
@@ -258,7 +278,7 @@ var _ = Describe("BuildRepository", func() {
 				tmpDir, err := ioutil.TempDir("", "build-repo-unit-tests")
 				Expect(err).NotTo(HaveOccurred())
 				buildsDir = filepath.Join(tmpDir, "i-dont-exist-yet")
-				repo = &builds.Repository{BuildsDir: buildsDir}
+				repo = builds.NewRepository(buildsDir)
 			})
 
 			AfterEach(func() {
