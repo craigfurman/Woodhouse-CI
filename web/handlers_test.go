@@ -168,7 +168,6 @@ var _ = Describe("Handlers", func() {
 			Expect(page.Navigate(fmt.Sprintf("%s/jobs/job-id/builds/latest", server.URL))).To(Succeed())
 			Eventually(page).Should(HaveURL(fmt.Sprintf("%s/jobs/job-id/builds/42", server.URL)))
 
-			Expect(jobService.HighestBuildCallCount()).To(Equal(1))
 			Expect(jobService.HighestBuildArgsForCall(0)).To(Equal("job-id"))
 		})
 	})

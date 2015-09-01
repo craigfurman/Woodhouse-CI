@@ -1,14 +1,27 @@
 {{ define "content" }}
-<h2 id="jobTitle">{{ .Name }}</h2>
-<h3 id="jobResult">{{ .ExitMessage }}</h3>
-<form action="/jobs/{{ .ID }}/builds" method="POST">
+<h2 id="jobTitle">{{ .Build.Name }}</h2>
+
+<form action="/jobs/{{ .Build.ID }}/builds" method="POST">
 	<button id="startNewBuild" class="btn btn-default" type="submit">Start new build</button>
 </form>
+
+<div class="build-history">
+	<ul>
+		{{ range $i := .BuildNumbers }}
+		<li><a href="/jobs/{{ $.Build.ID }}/builds/{{ $i }}">{{ $i }}</a></li>
+		{{ end }}
+	</ul>
+</div>
+
+<div class="build-output">
+	<h3 id="jobResult">{{ .ExitMessage }}</h3>
 <pre id="jobOutput">{{ .Output }}</pre>
+</div>
+
 <script type="text/javascript" src="/javascript/vendor/jquery/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
 	window.job = {
-		jobId: '{{ .ID }}',
+		jobId: '{{ .Build.ID }}',
 		buildNumber: '{{ .BuildNumber }}',
 		bytesAleadyReceived: '{{ .BytesAlreadyReceived }}',
 		finished: '{{ .ExitMessage }}' !== 'Running'

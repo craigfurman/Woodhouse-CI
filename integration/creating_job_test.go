@@ -61,14 +61,15 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 					CreateJob("busyJob", "echo hello", "busybox", "")
 			})
 
-			var latestBuildUrl string
+			var firstBuildUrl, latestBuildUrl string
 			By("scheduling another build", func() {
-				oldUrl, err := page.URL()
+				var err error
+				firstBuildUrl, err = page.URL()
 				Expect(err).NotTo(HaveOccurred())
 
 				showBuildPage.ScheduleNewBuild()
 
-				parts := strings.Split(oldUrl, "/")
+				parts := strings.Split(firstBuildUrl, "/")
 				parts = parts[0 : len(parts)-1]
 				parts = append(parts, "2")
 				latestBuildUrl = strings.Join(parts, "/")
@@ -76,8 +77,13 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 			})
 
 			By("linking to the latest build on the list jobs page", func() {
-				pageobjects.NewListJobsPage(page).Visit().GoToBuild("busyJob")
+				showBuildPage = pageobjects.NewListJobsPage(page).Visit().GoToBuild("busyJob")
 				Eventually(page).Should(HaveURL(latestBuildUrl))
+			})
+
+			By("showing the build history", func() {
+				showBuildPage.GoToBuild(1)
+				Eventually(page).Should(HaveURL(firstBuildUrl))
 			})
 		})
 	})

@@ -113,10 +113,33 @@ func (h *Handler) showBuild(w http.ResponseWriter, r *http.Request) {
 	buildId, err := strconv.Atoi(buildIdStr)
 	must(err)
 
-	if runningJob, err := h.jobService.FindBuild(jobId, buildId); err == nil {
-		buildView := helpers.PresentableJob(runningJob)
-		buildView.BuildNumber = buildIdStr
-		buildView.BytesAlreadyReceived = len(runningJob.Output)
+	if build, err := h.jobService.FindBuild(jobId, buildId); err == nil {
+		sanitizedOutput := helpers.SanitisedHTML(build.Output)
+		highestBuildNumber, err := h.jobService.HighestBuild(jobId)
+		if err != nil {
+			h.renderErrPage("finding highest build number for job", err, w, r)
+			return
+		}
+		buildNumbers := []int{}
+		for i := highestBuildNumber; i > 0; i-- {
+			buildNumbers = append(buildNumbers, i)
+		}
+
+		buildView := struct {
+			Build                jobs.Build
+			BuildNumber          int
+			Output               template.HTML
+			BytesAlreadyReceived int
+			ExitMessage          string
+			BuildNumbers         []int
+		}{
+			Build:                build,
+			BuildNumber:          buildId,
+			Output:               sanitizedOutput,
+			BytesAlreadyReceived: len(sanitizedOutput),
+			ExitMessage:          helpers.Message(build),
+			BuildNumbers:         buildNumbers,
+		}
 		h.renderTemplate("show_build", buildView, w)
 	} else {
 		h.renderErrPage("retrieving job", err, w, r)
@@ -139,7 +162,7 @@ func (h *Handler) streamBuild(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		bytes, done := streamer.Next()
-		_, err = w.Write([]byte(eventMessage("output", helpers.SanitisedHTML(string(bytes)))))
+		_, err = w.Write([]byte(eventMessage("output", string(helpers.SanitisedHTML(bytes)))))
 		must(err)
 
 		w.(http.Flusher).Flush()
