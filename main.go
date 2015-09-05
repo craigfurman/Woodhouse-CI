@@ -31,6 +31,7 @@ func main() {
 	buildsDir := flag.String("buildsDir", filepath.Join(distBase, "builds"), "directory for saving build output")
 	assetsDir := flag.String("assetsDir", filepath.Join(distBase, "web", "assets"), "path to static web assets")
 	gooseCmd := flag.String("gooseCmd", filepath.Join(distBase, "bin", "goose"), `path to "goose" database migration tool`)
+	debugMode := flag.Bool("debugMode", false, "do not parse templates up front. Only for development use")
 	flag.Parse()
 
 	bootMsg := ` _    _                 _ _                                 _____ _____
@@ -42,6 +43,9 @@ func main() {
 `
 
 	fmt.Println(bootMsg)
+	if *debugMode {
+		log.Println("Starting in debug mode")
+	}
 
 	dbDir := filepath.Join(*storeDir, "sqlite")
 	must(os.MkdirAll(dbDir, 0755))
@@ -66,7 +70,7 @@ func main() {
 		JobRepository:   jobRepo,
 		Runner:          runner.NewDockerRunner(vcs.GitCloner{}),
 		BuildRepository: builds.NewRepository(*buildsDir),
-	}, *templateDir)
+	}, *templateDir, !*debugMode)
 
 	server := negroni.New(negroni.NewRecovery(), negroni.NewLogger(), negroni.NewStatic(http.Dir(*assetsDir)))
 	server.UseHandler(handler)

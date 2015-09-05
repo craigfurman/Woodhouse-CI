@@ -7,4 +7,5 @@ go run $project/main.go -port 3000 \
     -storeDir $project/db \
     -buildsDir $project/build_output \
     -gooseCmd goose \
-    -assetsDir $project/web/assets
+    -assetsDir $project/web/assets \
+    -debugMode true

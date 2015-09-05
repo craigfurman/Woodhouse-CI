@@ -29,18 +29,27 @@ type JobService interface {
 type Handler struct {
 	*mux.Router
 
-	jobService JobService
-	templates  map[string]*template.Template
+	jobService   JobService
+	templates    map[string]*template.Template
+	templateSets map[string][]string
 }
 
-func New(jobService JobService, templateDir string) *Handler {
-	templates := parseTemplates(templateDir)
+func New(jobService JobService, templateDir string, preloadTemplates bool) *Handler {
+	templateSets := collectTemplates(templateDir)
+	templates := make(map[string]*template.Template)
+	if preloadTemplates {
+		for viewName, templateSet := range templateSets {
+			templates[viewName] = template.Must(template.ParseFiles(templateSet...))
+		}
+	}
+
 	router := mux.NewRouter()
 
 	h := &Handler{
-		Router:     router,
-		templates:  templates,
-		jobService: jobService,
+		Router:       router,
+		templates:    templates,
+		templateSets: templateSets,
+		jobService:   jobService,
 	}
 
 	h.HandleFunc("/", h.rootHandler).Methods("GET")
@@ -196,11 +205,16 @@ func (h Handler) renderErrPage(message string, err error, w http.ResponseWriter,
 
 func (h Handler) renderTemplate(name string, pageObject interface{}, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html")
-	must(h.templates[name].Execute(w, pageObject))
+	if t, ok := h.templates[name]; ok {
+		must(t.Execute(w, pageObject))
+	} else {
+		log.Printf("template %s not found, parsing. If debug mode is not active, then something has gone wrong!\n", name)
+		must(template.Must(template.ParseFiles(h.templateSets[name]...)).Execute(w, pageObject))
+	}
 }
 
-func parseTemplates(templateDir string) map[string]*template.Template {
-	templates := make(map[string]*template.Template)
+func collectTemplates(templateDir string) map[string][]string {
+	templates := make(map[string][]string)
 
 	layout := filepath.Join(templateDir, "layouts", "layout.html")
 	views, err := filepath.Glob(fmt.Sprintf("%s/views/*.html", templateDir))
@@ -208,7 +222,7 @@ func parseTemplates(templateDir string) map[string]*template.Template {
 
 	for _, view := range views {
 		viewName := strings.Split(filepath.Base(view), ".")[0]
-		templates[viewName] = template.Must(template.ParseFiles(layout, view))
+		templates[viewName] = []string{layout, view}
 	}
 	return templates
 }

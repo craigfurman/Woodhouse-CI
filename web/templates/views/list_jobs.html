@@ -2,8 +2,8 @@
 <h2>Jobs</h2>
 <a id="newJob" href="/jobs/new">Create a job</a>
 <ul class="jobs">
-	{{ range $job := . }}
-	<li class="job"><a href="/jobs/{{ $job.ID }}/builds/latest">{{ $job.Name }}</a></li>
-	{{ end }}
+    {{ range $job := . }}
+    <li class="job"><a href="/jobs/{{ $job.ID }}/builds/latest">{{ $job.Name }}</a></li>
+    {{ end }}
 </ul>
 {{ end }}

@@ -31,7 +31,7 @@ var _ = Describe("Handlers", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		jobService = new(fake_job_service.FakeJobService)
-		handler := web.New(jobService, filepath.Join(cwd, "templates"))
+		handler := web.New(jobService, filepath.Join(cwd, "templates"), true)
 		server = httptest.NewServer(handler)
 
 		page, err = agoutiDriver.NewPage()
