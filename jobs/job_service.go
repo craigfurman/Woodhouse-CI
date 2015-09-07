@@ -48,8 +48,31 @@ type Service struct {
 	BuildRepository BuildRepository
 }
 
-func (s *Service) ListJobs() ([]Job, error) {
-	return s.JobRepository.List()
+func (s *Service) AllLatestBuilds() ([]Build, error) {
+	errs := func(err error) ([]Build, error) {
+		return []Build{}, fmt.Errorf("listing all latest builds. cause: %v\n", err)
+	}
+
+	jobList, err := s.JobRepository.List()
+	if err != nil {
+		return errs(err)
+	}
+
+	builds := []Build{}
+	for _, job := range jobList {
+		highestBuildForJob, err := s.HighestBuild(job.ID)
+		if err != nil {
+			return errs(err)
+		}
+
+		build, err := s.findBuild(job, highestBuildForJob)
+		if err != nil {
+			return errs(err)
+		}
+
+		builds = append(builds, build)
+	}
+	return builds, nil
 }
 
 func (s *Service) Save(job *Job) error {
@@ -79,7 +102,11 @@ func (s *Service) FindBuild(jobId string, buildNumber int) (Build, error) {
 	if err != nil {
 		return Build{}, err
 	}
-	build, err := s.BuildRepository.Find(jobId, buildNumber)
+	return s.findBuild(job, buildNumber)
+}
+
+func (s *Service) findBuild(job Job, buildNumber int) (Build, error) {
+	build, err := s.BuildRepository.Find(job.ID, buildNumber)
 	if err != nil {
 		return Build{}, err
 	}

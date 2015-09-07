@@ -12,18 +12,18 @@ import (
 
 var _ = Describe("Job grid structure", func() {
 	var (
-		list []jobs.Job
-		grid [][]jobs.Job
+		list []jobs.Build
+		grid [][]jobs.Build
 	)
 
-	job := func(i int) jobs.Job {
-		return jobs.Job{ID: strconv.Itoa(i)}
+	build := func(i int) jobs.Build {
+		return jobs.Build{Job: jobs.Job{ID: strconv.Itoa(i)}}
 	}
 
-	createList := func(n int) []jobs.Job {
-		l := []jobs.Job{}
+	createList := func(n int) []jobs.Build {
+		l := []jobs.Build{}
 		for i := 0; i < n; i++ {
-			l = append(l, job(i))
+			l = append(l, build(i))
 		}
 		return l
 	}
@@ -49,8 +49,8 @@ var _ = Describe("Job grid structure", func() {
 
 		It("returns one row with one column", func() {
 			Expect(grid).To(Equal(
-				[][]jobs.Job{
-					{job(0)},
+				[][]jobs.Build{
+					{build(0)},
 				},
 			))
 		})
@@ -63,9 +63,9 @@ var _ = Describe("Job grid structure", func() {
 
 		It("returns 1 row of 3 and 1 row of 1", func() {
 			Expect(grid).To(Equal(
-				[][]jobs.Job{
-					{job(0), job(1), job(2)},
-					{job(3)},
+				[][]jobs.Build{
+					{build(0), build(1), build(2)},
+					{build(3)},
 				},
 			))
 		})

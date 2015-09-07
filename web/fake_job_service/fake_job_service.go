@@ -10,11 +10,11 @@ import (
 )
 
 type FakeJobService struct {
-	ListJobsStub        func() ([]jobs.Job, error)
-	listJobsMutex       sync.RWMutex
-	listJobsArgsForCall []struct{}
-	listJobsReturns     struct {
-		result1 []jobs.Job
+	AllLatestBuildsStub        func() ([]jobs.Build, error)
+	allLatestBuildsMutex       sync.RWMutex
+	allLatestBuildsArgsForCall []struct{}
+	allLatestBuildsReturns     struct {
+		result1 []jobs.Build
 		result2 error
 	}
 	SaveStub        func(job *jobs.Job) error
@@ -66,27 +66,27 @@ type FakeJobService struct {
 	}
 }
 
-func (fake *FakeJobService) ListJobs() ([]jobs.Job, error) {
-	fake.listJobsMutex.Lock()
-	fake.listJobsArgsForCall = append(fake.listJobsArgsForCall, struct{}{})
-	fake.listJobsMutex.Unlock()
-	if fake.ListJobsStub != nil {
-		return fake.ListJobsStub()
+func (fake *FakeJobService) AllLatestBuilds() ([]jobs.Build, error) {
+	fake.allLatestBuildsMutex.Lock()
+	fake.allLatestBuildsArgsForCall = append(fake.allLatestBuildsArgsForCall, struct{}{})
+	fake.allLatestBuildsMutex.Unlock()
+	if fake.AllLatestBuildsStub != nil {
+		return fake.AllLatestBuildsStub()
 	} else {
-		return fake.listJobsReturns.result1, fake.listJobsReturns.result2
+		return fake.allLatestBuildsReturns.result1, fake.allLatestBuildsReturns.result2
 	}
 }
 
-func (fake *FakeJobService) ListJobsCallCount() int {
-	fake.listJobsMutex.RLock()
-	defer fake.listJobsMutex.RUnlock()
-	return len(fake.listJobsArgsForCall)
+func (fake *FakeJobService) AllLatestBuildsCallCount() int {
+	fake.allLatestBuildsMutex.RLock()
+	defer fake.allLatestBuildsMutex.RUnlock()
+	return len(fake.allLatestBuildsArgsForCall)
 }
 
-func (fake *FakeJobService) ListJobsReturns(result1 []jobs.Job, result2 error) {
-	fake.ListJobsStub = nil
-	fake.listJobsReturns = struct {
-		result1 []jobs.Job
+func (fake *FakeJobService) AllLatestBuildsReturns(result1 []jobs.Build, result2 error) {
+	fake.AllLatestBuildsStub = nil
+	fake.allLatestBuildsReturns = struct {
+		result1 []jobs.Build
 		result2 error
 	}{result1, result2}
 }

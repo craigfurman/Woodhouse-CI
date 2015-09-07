@@ -56,6 +56,14 @@ body {
                         display: table-cell;
                         vertical-align: middle;
                     }
+
+                    &.passing {
+                        background-color: green;
+                    }
+
+                    &.failing {
+                        background-color: red;
+                    }
                 }
             }
         }

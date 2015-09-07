@@ -2,16 +2,16 @@ package helpers
 
 import "github.com/craigfurman/woodhouse-ci/jobs"
 
-func JobGrid(list []jobs.Job) [][]jobs.Job {
-	grid := [][]jobs.Job{}
-	row := []jobs.Job{}
-	for _, job := range list {
+func JobGrid(list []jobs.Build) [][]jobs.Build {
+	grid := [][]jobs.Build{}
+	row := []jobs.Build{}
+	for _, build := range list {
 		if len(row) == 3 {
 			grid = append(grid, row)
-			row = []jobs.Job{}
+			row = []jobs.Build{}
 		}
 
-		row = append(row, job)
+		row = append(row, build)
 	}
 	if len(row) > 0 {
 		grid = append(grid, row)

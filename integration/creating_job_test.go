@@ -50,6 +50,11 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 		By("indicating that the job ran successfully", func() {
 			Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
 		})
+
+		By("indicating that the job is passing on job list page", func() {
+			pageobjects.NewListJobsPage(page).Visit()
+			Eventually(page.FindByLink("Bob")).Should(HaveAttribute("class", "passing"))
+		})
 	})
 
 	Context("when 2 builds are scheduled for a job", func() {
@@ -61,29 +66,29 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 					CreateJob("busyJob", "echo hello", "busybox", "")
 			})
 
-			var firstBuildUrl, latestBuildUrl string
+			var firstBuildURL, latestBuildURL string
 			By("scheduling another build", func() {
 				var err error
-				firstBuildUrl, err = page.URL()
+				firstBuildURL, err = page.URL()
 				Expect(err).NotTo(HaveOccurred())
 
 				showBuildPage.ScheduleNewBuild()
 
-				parts := strings.Split(firstBuildUrl, "/")
+				parts := strings.Split(firstBuildURL, "/")
 				parts = parts[0 : len(parts)-1]
 				parts = append(parts, "2")
-				latestBuildUrl = strings.Join(parts, "/")
-				Eventually(page).Should(HaveURL(latestBuildUrl))
+				latestBuildURL = strings.Join(parts, "/")
+				Eventually(page).Should(HaveURL(latestBuildURL))
 			})
 
 			By("linking to the latest build on the list jobs page", func() {
 				showBuildPage = pageobjects.NewListJobsPage(page).Visit().GoToBuild("busyJob")
-				Eventually(page).Should(HaveURL(latestBuildUrl))
+				Eventually(page).Should(HaveURL(latestBuildURL))
 			})
 
 			By("showing the build history", func() {
 				showBuildPage.GoToBuild(1)
-				Eventually(page).Should(HaveURL(firstBuildUrl))
+				Eventually(page).Should(HaveURL(firstBuildURL))
 			})
 		})
 	})
@@ -143,8 +148,13 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 				Eventually(page.Find("#jobOutput")).Should(HaveText("hi"))
 			})
 
-			By("indicating that the job ran successfully", func() {
+			By("indicating that the job failed on the job output page", func() {
 				Eventually(page.Find("#jobResult")).Should(HaveText("Failure: exit status 42"))
+			})
+
+			By("indicating that the job is failing on job list page", func() {
+				pageobjects.NewListJobsPage(page).Visit()
+				Eventually(page.FindByLink("FailedJob")).Should(HaveAttribute("class", "failing"))
 			})
 		})
 	})

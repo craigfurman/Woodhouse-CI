@@ -33,6 +33,28 @@ var _ = Describe("Service", func() {
 		}
 	})
 
+	Describe("listing all the latest builds", func() {
+		It("returns the latest build for every job", func() {
+			jobRepo.ListReturns([]jobs.Job{{ID: "some-id"}}, nil)
+			buildRepo.HighestBuildReturns(12, nil)
+			buildRepo.FindReturns(jobs.Build{Output: []byte("some output")}, nil)
+
+			builds, err := service.AllLatestBuilds()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(builds).To(ConsistOf(jobs.Build{
+				Job:    jobs.Job{ID: "some-id"},
+				Output: []byte("some output"),
+			}))
+
+			Expect(jobRepo.ListCallCount()).To(Equal(1))
+			Expect(buildRepo.HighestBuildCallCount()).To(Equal(1))
+			Expect(buildRepo.FindCallCount()).To(Equal(1))
+			jobID, buildNo := buildRepo.FindArgsForCall(0)
+			Expect(jobID).To(Equal("some-id"))
+			Expect(buildNo).To(Equal(12))
+		})
+	})
+
 	Describe("saving a job", func() {
 		It("saves the job using the jobRepository", func() {
 			Expect(service.Save(&jobs.Job{Name: "freddo", Command: "whoami"})).To(Succeed())

@@ -42,4 +42,45 @@ var _ = Describe("Build view helpers", func() {
 			})).To(Equal("Running"))
 		})
 	})
+
+	Describe("build classes", func() {
+		var (
+			b       jobs.Build
+			classes string
+		)
+
+		JustBeforeEach(func() {
+			classes = helpers.Classes(b)
+		})
+
+		Context("when the build is running", func() {
+			BeforeEach(func() {
+				b = jobs.Build{Finished: false}
+			})
+
+			It("returns empty string", func() {
+				Expect(classes).To(BeEmpty())
+			})
+		})
+
+		Context("when the build was successful", func() {
+			BeforeEach(func() {
+				b = jobs.Build{Finished: true, ExitStatus: 0}
+			})
+
+			It("returns empty string", func() {
+				Expect(classes).To(Equal("passing"))
+			})
+		})
+
+		Context("when the build has failed", func() {
+			BeforeEach(func() {
+				b = jobs.Build{Finished: true, ExitStatus: 1}
+			})
+
+			It("returns empty string", func() {
+				Expect(classes).To(Equal("failing"))
+			})
+		})
+	})
 })

@@ -18,13 +18,13 @@
         </div>
 
         <div class="container-fluid job-list">
-            {{ range $row := .JobRows }}
+            {{ range $row := .BuildRows }}
             <div class="row job-row">
-                {{ range $job := $row }}
+                {{ range $build := $row }}
                 <div class="col-md-4 job-cell">
                     <div class="job">
-                        <a href="/jobs/{{ $job.ID }}/builds/latest">
-                            <span>{{ $job.Name }}</span>
+                        <a href="/jobs/{{ $build.ID }}/builds/latest" class="{{ $build.Status }}">
+                            <span>{{ $build.Name }}</span>
                         </a>
                     </div>
                 </div>

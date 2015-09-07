@@ -17,7 +17,7 @@ import (
 
 //go:generate counterfeiter -o fake_job_service/fake_job_service.go . JobService
 type JobService interface {
-	ListJobs() ([]jobs.Job, error)
+	AllLatestBuilds() ([]jobs.Build, error)
 	Save(job *jobs.Job) error
 	RunJob(id string) (int, error)
 	FindBuild(jobId string, buildNumber int) (jobs.Build, error)
@@ -67,11 +67,30 @@ func (h *Handler) rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
-	if list, err := h.jobService.ListJobs(); err == nil {
+	if list, err := h.jobService.AllLatestBuilds(); err == nil {
+		type cell struct {
+			ID     string
+			Name   string
+			Status string
+		}
+
+		cells := [][]cell{}
+		for _, buildRow := range helpers.JobGrid(list) {
+			cellRow := []cell{}
+			for _, build := range buildRow {
+				cellRow = append(cellRow, cell{
+					ID:     build.ID,
+					Name:   build.Name,
+					Status: helpers.Classes(build),
+				})
+			}
+			cells = append(cells, cellRow)
+		}
+
 		p := struct {
-			JobRows [][]jobs.Job
+			BuildRows [][]cell
 		}{
-			JobRows: helpers.JobGrid(list),
+			BuildRows: cells,
 		}
 		h.renderTemplate("list_jobs", p, w)
 	} else {

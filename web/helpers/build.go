@@ -21,3 +21,15 @@ func Message(build jobs.Build) string {
 	}
 	return fmt.Sprintf("Failure: exit status %d", build.ExitStatus)
 }
+
+func Classes(build jobs.Build) string {
+	if !build.Finished {
+		return ""
+	}
+
+	if build.ExitStatus == 0 {
+		return "passing"
+	} else {
+		return "failing"
+	}
+}
