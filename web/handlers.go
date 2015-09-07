@@ -241,11 +241,13 @@ func collectTemplates(templateDir string) map[string][]string {
 		return filepath.Join(templateDir, viewType, view+".html")
 	}
 
+	layoutFor := func(layout string) string {
+		return templateFor("layouts", layout)
+	}
+
 	viewFor := func(view string) string {
 		return templateFor("views", view)
 	}
-
-	layout := filepath.Join(templateDir, "layouts", "layout.html")
 
 	listJobs := "list_jobs"
 	newJob := "new_job"
@@ -253,10 +255,10 @@ func collectTemplates(templateDir string) map[string][]string {
 	errorPage := "error"
 
 	return map[string][]string{
-		listJobs:  {viewFor(listJobs)},
-		newJob:    {layout, viewFor(newJob)},
-		showBuild: {layout, viewFor(showBuild)},
-		errorPage: {layout, viewFor(errorPage)},
+		listJobs:  {layoutFor("outer"), viewFor(listJobs)},
+		newJob:    {layoutFor("outer"), layoutFor("single_column"), viewFor(newJob)},
+		showBuild: {layoutFor("outer"), layoutFor("single_column"), viewFor(showBuild)},
+		errorPage: {layoutFor("outer"), layoutFor("single_column"), viewFor(errorPage)},
 	}
 }
 

@@ -1,38 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
+{{ define "layout" }}
+<div class="monitor-container">
+    <div class="monitor-header">
+        <h1 class="monitor-title">Woodhouse CI</h1>
+        <a id="newJob" class="pull-right" href="/jobs/new">Create a job</a>
+    </div>
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Woodhouse CI</title>
-
-    <link rel="stylesheet" href="/stylesheets/main.css">
-</head>
-
-<body>
-    <div class="monitor-container">
-        <div class="monitor-header">
-            <h1 class="monitor-title">Woodhouse CI</h1>
-            <a id="newJob" class="pull-right" href="/jobs/new">Create a job</a>
-        </div>
-
-        <div class="container-fluid job-list">
-            {{ range $row := .BuildRows }}
-            <div class="row job-row">
-                {{ range $build := $row }}
-                <div class="col-md-4 job-cell">
-                    <div class="job">
-                        <a href="/jobs/{{ $build.ID }}/builds/latest" class="{{ $build.Status }}">
-                            <span>{{ $build.Name }}</span>
-                        </a>
-                    </div>
+    <div class="container-fluid job-list">
+        {{ range $row := .BuildRows }}
+        <div class="row job-row">
+            {{ range $build := $row }}
+            <div class="col-md-4 job-cell">
+                <div class="job">
+                    <a href="/jobs/{{ $build.ID }}/builds/latest" class="{{ $build.Status }}">
+                        <span>{{ $build.Name }}</span>
+                    </a>
                 </div>
-                {{ end }}
             </div>
             {{ end }}
         </div>
+        {{ end }}
     </div>
-</body>
-
-</html>
+</div>
+{{ end }}
