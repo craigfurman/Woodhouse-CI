@@ -1,8 +1,67 @@
 @import "vendor/bootstrap/bootstrap";
 @import "compass/css3/font-face";
-
 @include font-face("Droid Sans Mono", font-files("DroidSansMono.ttf"));
 
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+.monitor-container {
+    height: 100%;
+    background-color: #232323;
+
+    h1,
+    a {
+        color: white;
+    }
+}
+
+.monitor-header {
+    padding: 30px;
+}
+
+.monitor-title {
+    display: inline-block;
+    margin-top: 0;
+}
+
+.job-list {
+    height: calc(100% - 109px);
+
+    .job-row {
+        height: 50%;
+
+        .job-cell {
+            height: 100%;
+            padding: 15px;
+
+            .job {
+                height: 100%;
+
+                a {
+                    display: table;
+                    width: 100%;
+                    height: 100%;
+                    background-color: blue;
+                    font-size: 30px;
+                    text-align: center;
+
+                    &:hover {
+                        text-decoration: none;
+                    }
+
+                    span {
+                        display: table-cell;
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+    }
+}
+
 #jobOutput {
-	font-family: "Droid Sans Mono", monospace;
+    font-family: "Droid Sans Mono", monospace;
 }

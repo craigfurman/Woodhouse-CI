@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/craigfurman/woodhouse-ci/chunkedio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
@@ -69,7 +68,12 @@ func (h *Handler) rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
 	if list, err := h.jobService.ListJobs(); err == nil {
-		h.renderTemplate("list_jobs", list, w)
+		p := struct {
+			JobRows [][]jobs.Job
+		}{
+			JobRows: helpers.JobGrid(list),
+		}
+		h.renderTemplate("list_jobs", p, w)
 	} else {
 		h.renderErrPage("listing jobs", err, w, r)
 	}
@@ -214,17 +218,27 @@ func (h Handler) renderTemplate(name string, pageObject interface{}, w http.Resp
 }
 
 func collectTemplates(templateDir string) map[string][]string {
-	templates := make(map[string][]string)
+	templateFor := func(viewType, view string) string {
+		return filepath.Join(templateDir, viewType, view+".html")
+	}
+
+	viewFor := func(view string) string {
+		return templateFor("views", view)
+	}
 
 	layout := filepath.Join(templateDir, "layouts", "layout.html")
-	views, err := filepath.Glob(fmt.Sprintf("%s/views/*.html", templateDir))
-	must(err)
 
-	for _, view := range views {
-		viewName := strings.Split(filepath.Base(view), ".")[0]
-		templates[viewName] = []string{layout, view}
+	listJobs := "list_jobs"
+	newJob := "new_job"
+	showBuild := "show_build"
+	errorPage := "error"
+
+	return map[string][]string{
+		listJobs:  {viewFor(listJobs)},
+		newJob:    {layout, viewFor(newJob)},
+		showBuild: {layout, viewFor(showBuild)},
+		errorPage: {layout, viewFor(errorPage)},
 	}
-	return templates
 }
 
 func must(err error) {
