@@ -1,5 +1,6 @@
 # Woodhouse-CI
-Look, he thinks he's people!
+
+## Work in progress - not yet ready for general use
 
 ## Dependencies
 
