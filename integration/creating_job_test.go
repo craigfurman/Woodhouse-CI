@@ -111,6 +111,7 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 		It("starts the job and streams the output", func() {
 			By("creating the new job", func() {
 				jobSubmitted := make(chan bool)
+
 				go func(c chan<- bool) {
 					defer GinkgoRecover()
 					pageobjects.NewListJobsPage(page).Visit().
@@ -118,6 +119,7 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 						CreateJob("Bob", `sh -c "echo start && sleep 2 && echo finish"`, "busybox", "")
 					c <- true
 				}(jobSubmitted)
+
 				select {
 				case <-jobSubmitted:
 				case <-time.After(time.Second * 2):
@@ -132,6 +134,12 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 
 			By("indicating that the job ran successfully", func() {
 				Eventually(page.Find("#jobResult")).Should(HaveText("Success"))
+			})
+
+			By("updating the jobs status on the list jobs page", func() {
+				pageobjects.NewShowBuildPage(page).ScheduleNewBuild()
+				pageobjects.NewListJobsPage(page).Visit()
+				Eventually(page.FindByLink("Bob")).Should(HaveAttribute("class", "passing"))
 			})
 		})
 	})

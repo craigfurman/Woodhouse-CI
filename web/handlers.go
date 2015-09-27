@@ -1,12 +1,14 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/craigfurman/woodhouse-ci/chunkedio"
 	"github.com/craigfurman/woodhouse-ci/jobs"
@@ -53,6 +55,7 @@ func New(jobService JobService, templateDir string, preloadTemplates bool) *Hand
 
 	h.HandleFunc("/", h.rootHandler).Methods("GET")
 	h.HandleFunc("/jobs", h.listJobs).Methods("GET")
+	h.HandleFunc("/jobs/status", h.listJobStatuses).Methods("GET")
 	h.HandleFunc("/jobs/new", h.newJob).Methods("GET")
 	h.HandleFunc("/jobs", h.createJob).Methods("POST")
 	h.HandleFunc("/jobs/{jobId}/builds", h.createBuild).Methods("POST")
@@ -95,6 +98,29 @@ func (h *Handler) listJobs(w http.ResponseWriter, r *http.Request) {
 		h.renderTemplate("list_jobs", p, w)
 	} else {
 		h.renderErrPage("listing jobs", err, w, r)
+	}
+}
+
+func (h *Handler) listJobStatuses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream\n\n")
+
+	for {
+		list, err := h.jobService.AllLatestBuilds()
+		must(err)
+
+		statuses := make(map[string]string)
+		for _, build := range list {
+			statuses[build.ID] = helpers.Classes(build)
+			msg, err := json.Marshal(statuses)
+			must(err)
+			if _, err := w.Write([]byte(eventMessage("jobs", string(msg)))); err != nil {
+				log.Printf("trying to write job statuses JSON. assuming remote end hung up. Cause: %v\n", err)
+				return
+			}
+
+			w.(http.Flusher).Flush()
+			time.Sleep(time.Millisecond * 100)
+		}
 	}
 }
 
