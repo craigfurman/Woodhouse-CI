@@ -12,16 +12,16 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
+			"Rev": "1c83b3eabd45b6d76072b66b746c20815fb2872d"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Rev": "ba336c9cfb43552c90de6cb2ceedd3271c747558"
+			"Rev": "ad4d7a5882b961e07e2626045eb995c022ac6664"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
-			"Comment": "v1.0.0",
-			"Rev": "b4142c444a8941d0d92b0b7103a24df9cd815e42"
+			"Comment": "v1.1.0-11-gb808f01",
+			"Rev": "b808f01f660667b1510acf216aa2b9fe7f555ddb"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -30,17 +30,17 @@
 		},
 		{
 			"ImportPath": "github.com/onsi/gomega",
-			"Comment": "v1.0-50-gd6c945f",
-			"Rev": "d6c945f9fdbf6cad99e85b0feff591caa268e0db"
+			"Comment": "v1.0-71-g2152b45",
+			"Rev": "2152b45fa28a361beba9aab0885972323a444e28"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",
-			"Rev": "ca53cad383cad2479bbba7f7a1a05797ec1386e4"
+			"Rev": "cccd189d45f7ac3368a0d127efb7f4d08ae0b655"
 		},
 		{
 			"ImportPath": "github.com/sclevine/agouti",
-			"Comment": "v2-latest-27-g547867f",
-			"Rev": "547867f76f1c76d9d5380db4bf27deedd12ec367"
+			"Comment": "v2-latest-29-gce62464",
+			"Rev": "ce62464824d19ff6a7aaec92bdfc802ce0cbec00"
 		}
 	]
 }

@@ -37,10 +37,11 @@ type Log struct {
 }
 
 // NewPage opens a Page using the provided WebDriver URL. This method takes
-// the same Options as *WebDriver.NewPage.
+// the same Options as *WebDriver.NewPage. Unlike *WebDriver.NewPage, this
+// method will respect the HTTPClient Option if provided.
 func NewPage(url string, options ...Option) (*Page, error) {
-	desiredCapabilities := config{}.Merge(options).Capabilities()
-	session, err := api.Open(url, desiredCapabilities)
+	pageOptions := config{}.Merge(options)
+	session, err := api.OpenWithClient(url, pageOptions.Capabilities(), pageOptions.HTTPClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to WebDriver: %s", err)
 	}
