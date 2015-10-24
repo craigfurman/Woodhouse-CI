@@ -1,15 +1,26 @@
 package helpers
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
+	"regexp"
 	"strings"
 
 	"github.com/craigfurman/woodhouse-ci/jobs"
 )
 
 func SanitisedHTML(raw []byte) template.HTML {
-	return template.HTML(strings.Replace(template.HTMLEscapeString(string(raw)), "\n", "<br>", -1))
+	colourizedText := ansiColours(raw)
+	return template.HTML(strings.Replace(template.HTMLEscapeString(colourizedText), "\n", "<br>", -1))
+}
+
+func ansiColours(text []byte) string {
+	// r := regexp.MustCompile(`{\\e\[(\d+)m(.*)}+`)
+	r := regexp.MustCompile(`\\e\[(\d+)m(.*)`)
+	matches := r.FindAll(text, -1)
+
+	fmt.Println(string(bytes.Join(matches, []byte(":"))))
 }
 
 func Message(build jobs.Build) string {

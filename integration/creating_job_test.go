@@ -57,6 +57,14 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04.3 LTS".*`
 		})
 	})
 
+	FIt("streams output in colour", func() {
+		pageobjects.NewListJobsPage(page).Visit().GoToCreateNewJob().
+			CreateJob("colour output!", `echo -e "\e[96mSuch colour!"`, "busybox", "")
+
+		Eventually(page.Find("#jobOutput")).Should(HaveText("Such colour!"))
+		Eventually(page.Find("#jobOutput")).ShouldNot(MatchText(`.*\[.*`))
+	})
+
 	Context("when 2 builds are scheduled for a job", func() {
 		It("preserves build history", func() {
 			var showBuildPage *pageobjects.ShowBuildPage

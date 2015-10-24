@@ -16,6 +16,10 @@ var _ = Describe("Build view helpers", func() {
 			Expect(helpers.SanitisedHTML([]byte("some\nlines"))).To(Equal(template.HTML("some<br>lines")))
 		})
 
+		FIt("replaces ANSI colour escape codes with styles", func() {
+			Expect(helpers.SanitisedHTML([]byte(`\e[95msome colour text \e[94ma different colour`))).To(Equal(template.HTML(`<span class="ansi-95">some colour text </span><span class="ansi-94">a different colour</span>`)))
+		})
+
 		It("still escapes all HTML in output", func() {
 			Expect(helpers.SanitisedHTML([]byte("<script>dangerous</script>"))).To(Equal(template.HTML("&lt;script&gt;dangerous&lt;/script&gt;")))
 		})
