@@ -7,21 +7,6 @@ import (
 	"github.com/craigfurman/woodhouse-ci/chunkedio"
 )
 
-type Job struct {
-	ID            string
-	Name          string
-	GitRepository string
-	DockerImage   string
-	Command       string
-}
-
-type Build struct {
-	Job
-	Finished   bool
-	Output     []byte
-	ExitStatus uint32
-}
-
 //go:generate counterfeiter -o fake_job_repository/fake_job_repository.go . JobRepository
 type JobRepository interface {
 	List() ([]Job, error)
